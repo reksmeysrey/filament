@@ -1,106 +1,239 @@
-<x-dynamic-component
-    :component="$getFieldWrapperView()"
-    :id="$getId()"
-    :label="$getLabel()"
-    :label-sr-only="$isLabelHidden()"
-    :helper-text="$getHelperText()"
-    :hint="$getHint()"
-    :hint-action="$getHintAction()"
-    :hint-color="$getHintColor()"
-    :hint-icon="$getHintIcon()"
-    :required="$isRequired()"
-    :state-path="$getStatePath()"
->
-    @if ($isBulkToggleable())
-    <div x-data="{
-        checkboxes: $root.querySelectorAll('input[type=checkbox]'),
+@php
+    $gridDirection = $getGridDirection() ?? 'column';
+    $isBulkToggleable = $isBulkToggleable();
+    $isDisabled = $isDisabled();
+    $isSearchable = $isSearchable();
+    $statePath = $getStatePath();
+@endphp
 
-        isAllSelected: false,
+<x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
+    <div
+        x-data="{
+            areAllCheckboxesChecked: false,
 
-        init: function () {
-            this.updateIsAllSelected()
-        },
+            checkboxListOptions: Array.from(
+                $root.querySelectorAll('.fi-fo-checkbox-list-option-label'),
+            ),
 
-        updateIsAllSelected: function () {
-            this.isAllSelected = this.checkboxes.length === this.$root.querySelectorAll('input[type=checkbox]:checked').length
-        },
+            search: '',
 
-        toggleAll: function () {
-            state = !this.isAllSelected
+            visibleCheckboxListOptions: [],
 
-            this.checkboxes.forEach((checkbox) => {
-                checkbox.checked = state
-                checkbox.dispatchEvent(new Event('change'))
+            checkIfAllCheckboxesAreChecked: function () {
+                this.areAllCheckboxesChecked =
+                    this.visibleCheckboxListOptions.length ===
+                    this.visibleCheckboxListOptions.filter((checkboxLabel) =>
+                        checkboxLabel.querySelector('input[type=checkbox]:checked'),
+                    ).length
+            },
+
+            toggleAllCheckboxes: function () {
+                state = ! this.areAllCheckboxesChecked
+
+                this.visibleCheckboxListOptions.forEach((checkboxLabel) => {
+                    checkbox = checkboxLabel.querySelector('input[type=checkbox]')
+
+                    if (checkbox.disabled) {
+                        return
+                    }
+
+                    checkbox.checked = state
+                    checkbox.dispatchEvent(new Event('change'))
+                })
+
+                this.areAllCheckboxesChecked = state
+            },
+
+            updateVisibleCheckboxListOptions: function () {
+                this.visibleCheckboxListOptions = this.checkboxListOptions.filter(
+                    (checkboxListItem) => {
+                        if (
+                            checkboxListItem
+                                .querySelector('.fi-fo-checkbox-list-option-label')
+                                ?.innerText.toLowerCase()
+                                .includes(this.search.toLowerCase())
+                        ) {
+                            return true
+                        }
+
+                        return checkboxListItem
+                            .querySelector('.fi-fo-checkbox-list-option-description')
+                            ?.innerText.toLowerCase()
+                            .includes(this.search.toLowerCase())
+                    },
+                )
+            },
+        }"
+        x-init="
+            updateVisibleCheckboxListOptions()
+
+            $nextTick(() => {
+                checkIfAllCheckboxesAreChecked()
             })
-        },
-    }">
-        <div class="mb-2">
-            <x-forms::link
-                tag="button"
-                size="sm"
-                x-show="!isAllSelected"
-                x-on:click="toggleAll"
-            >
-                {{ __('forms::components.checkbox_list.buttons.select_all.label') }}
-            </x-forms::link>
 
-            <x-forms::link
-                tag="button"
-                size="sm"
-                x-show="isAllSelected"
-                x-on:click="toggleAll"
-            >
-                {{ __('forms::components.checkbox_list.buttons.deselect_all.label') }}
-            </x-forms::link>
-        </div>
-    @endif
+            Livewire.hook('commit', ({ component, commit, succeed, fail, respond }) => {
+                succeed(({ snapshot, effect }) => {
+                    $nextTick(() => {
+                        if (component.id !== @js($this->getId())) {
+                            return
+                        }
 
-        <x-filament-support::grid
+                        checkboxListOptions = Array.from(
+                            $root.querySelectorAll('.fi-fo-checkbox-list-option-label'),
+                        )
+
+                        updateVisibleCheckboxListOptions()
+
+                        checkIfAllCheckboxesAreChecked()
+                    })
+                })
+            })
+
+            $watch('search', () => {
+                updateVisibleCheckboxListOptions()
+                checkIfAllCheckboxesAreChecked()
+            })
+        "
+    >
+        @if (! $isDisabled)
+            @if ($isSearchable)
+                <x-filament::input.wrapper
+                    inline-prefix
+                    prefix-icon="heroicon-m-magnifying-glass"
+                    prefix-icon-alias="forms:components.checkbox-list.search-field"
+                    class="mb-4"
+                >
+                    <x-filament::input
+                        inline-prefix
+                        :placeholder="$getSearchPrompt()"
+                        type="search"
+                        :attributes="
+                            \Filament\Support\prepare_inherited_attributes(
+                                new \Illuminate\View\ComponentAttributeBag([
+                                    'x-model.debounce.' . $getSearchDebounce() => 'search',
+                                ])
+                            )
+                        "
+                    />
+                </x-filament::input.wrapper>
+            @endif
+
+            @if ($isBulkToggleable && count($getOptions()))
+                <div
+                    x-cloak
+                    class="mb-2"
+                    wire:key="{{ $this->getId() }}.{{ $getStatePath() }}.{{ $field::class }}.actions"
+                >
+                    <span
+                        x-show="! areAllCheckboxesChecked"
+                        x-on:click="toggleAllCheckboxes()"
+                        wire:key="{{ $this->getId() }}.{{ $statePath }}.{{ $field::class }}.actions.select-all"
+                    >
+                        {{ $getAction('selectAll') }}
+                    </span>
+
+                    <span
+                        x-show="areAllCheckboxesChecked"
+                        x-on:click="toggleAllCheckboxes()"
+                        wire:key="{{ $this->getId() }}.{{ $statePath }}.{{ $field::class }}.actions.deselect-all"
+                    >
+                        {{ $getAction('deselectAll') }}
+                    </span>
+                </div>
+            @endif
+        @endif
+
+        <x-filament::grid
             :default="$getColumns('default')"
             :sm="$getColumns('sm')"
             :md="$getColumns('md')"
             :lg="$getColumns('lg')"
             :xl="$getColumns('xl')"
             :two-xl="$getColumns('2xl')"
-            direction="column"
-            :attributes="$attributes->class(['filament-forms-checkbox-list-component gap-1 space-y-2'])"
+            :direction="$gridDirection"
+            :x-show="$isSearchable ? 'visibleCheckboxListOptions.length' : null"
+            :attributes="
+                \Filament\Support\prepare_inherited_attributes($attributes)
+                    ->merge($getExtraAttributes(), escape: false)
+                    ->class([
+                        'fi-fo-checkbox-list gap-4',
+                        '-mt-4' => $gridDirection === 'column',
+                    ])
+            "
         >
-            @php
-                $isDisabled = $isDisabled();
-            @endphp
+            @forelse ($getOptions() as $value => $label)
+                <div
+                    wire:key="{{ $this->getId() }}.{{ $statePath }}.{{ $field::class }}.options.{{ $value }}"
+                    @if ($isSearchable)
+                        x-show="
+                            $el
+                                .querySelector('.fi-fo-checkbox-list-option-label')
+                                ?.innerText.toLowerCase()
+                                .includes(search.toLowerCase()) ||
+                                $el
+                                    .querySelector('.fi-fo-checkbox-list-option-description')
+                                    ?.innerText.toLowerCase()
+                                    .includes(search.toLowerCase())
+                        "
+                    @endif
+                    @class([
+                        'break-inside-avoid pt-4' => $gridDirection === 'column',
+                    ])
+                >
+                    <label
+                        class="fi-fo-checkbox-list-option-label flex gap-x-3"
+                    >
+                        <x-filament::input.checkbox
+                            :valid="! $errors->has($statePath)"
+                            :attributes="
+                                \Filament\Support\prepare_inherited_attributes($getExtraInputAttributeBag())
+                                    ->merge([
+                                        'disabled' => $isDisabled || $isOptionDisabled($value, $label),
+                                        'value' => $value,
+                                        'wire:loading.attr' => 'disabled',
+                                        $applyStateBindingModifiers('wire:model') => $statePath,
+                                        'x-on:change' => $isBulkToggleable ? 'checkIfAllCheckboxesAreChecked()' : null,
+                                    ], escape: false)
+                                    ->class(['mt-1'])
+                            "
+                        />
 
-            @foreach ($getOptions() as $optionValue => $optionLabel)
-                <label class="flex items-center space-x-3 rtl:space-x-reverse">
-                    <input
-                        {!! $isDisabled ? 'disabled' : null !!}
-                        wire:loading.attr="disabled"
-                        type="checkbox"
-                        value="{{ $optionValue }}"
-                        dusk="filament.forms.{{ $getStatePath() }}"
-                        @if ($isBulkToggleable())
-                            x-on:change="updateIsAllSelected"
-                        @endif
-                        {{ $applyStateBindingModifiers('wire:model') }}="{{ $getStatePath() }}"
-                        {{ $getExtraAttributeBag()->class([
-                            'text-primary-600 transition duration-75 rounded shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 disabled:opacity-70',
-                            'dark:bg-gray-700 dark:checked:bg-primary-500' => config('forms.dark_mode'),
-                            'border-gray-300' => ! $errors->has($getStatePath()),
-                            'dark:border-gray-600' => (! $errors->has($getStatePath())) && config('forms.dark_mode'),
-                            'border-danger-300 ring-danger-500' => $errors->has($getStatePath()),
-                        ]) }}
-                    />
+                        <div class="grid text-sm leading-6">
+                            <span
+                                class="fi-fo-checkbox-list-option-label overflow-hidden break-words font-medium text-gray-950 dark:text-white"
+                            >
+                                @if ($isHtmlAllowed())
+                                    {!! $label !!}
+                                @else
+                                    {{ $label }}
+                                @endif
+                            </span>
 
-                    <span @class([
-                        'text-sm font-medium text-gray-700',
-                        'dark:text-gray-200' => config('forms.dark_mode'),
-                    ])>
-                        {{ $optionLabel }}
-                    </span>
-                </label>
-            @endforeach
-        </x-filament-support::grid>
+                            @if ($hasDescription($value))
+                                <p
+                                    class="fi-fo-checkbox-list-option-description text-gray-500 dark:text-gray-400"
+                                >
+                                    {{ $getDescription($value) }}
+                                </p>
+                            @endif
+                        </div>
+                    </label>
+                </div>
+            @empty
+                <div
+                    wire:key="{{ $this->getId() }}.{{ $statePath }}.{{ $field::class }}.empty"
+                ></div>
+            @endforelse
+        </x-filament::grid>
 
-    @if ($isBulkToggleable())
+        @if ($isSearchable)
+            <div
+                x-cloak
+                x-show="search && ! visibleCheckboxListOptions.length"
+                class="fi-fo-checkbox-list-no-search-results-message text-sm text-gray-500 dark:text-gray-400"
+            >
+                {{ $getNoSearchResultsMessage() }}
+            </div>
+        @endif
     </div>
-    @endif
 </x-dynamic-component>

@@ -2,65 +2,82 @@
 
 return [
 
+    'column_toggle' => [
+
+        'heading' => 'Colonnes',
+
+    ],
+
     'columns' => [
 
-        'tags' => [
-            'more' => ':count de plus',
+        'actions' => [
+            'label' => 'Action|Actions',
         ],
 
-        'messages' => [
-            'copied' => 'Copié',
+        'text' => [
+
+            'actions' => [
+                'collapse_list' => 'Afficher :count de moins',
+                'expand_list' => 'Afficher :count de plus',
+            ],
+
+            'more_list_items' => ':count de plus',
+
         ],
 
     ],
 
     'fields' => [
 
-        'search_query' => [
+        'bulk_select_page' => [
+            'label' => 'Sélectionner/déselectionner tous les éléments pour les actions groupées.',
+        ],
+
+        'bulk_select_record' => [
+            'label' => "Sélectionner/désélectionner l'élément :key pour les actions groupées.",
+        ],
+
+        'bulk_select_group' => [
+            'label' => 'Sélectionner/désélectionner le groupe :title pour les actions groupées.',
+        ],
+
+        'search' => [
             'label' => 'Rechercher',
             'placeholder' => 'Rechercher',
+            'indicator' => 'Recherche',
         ],
 
     ],
 
-    'pagination' => [
+    'summary' => [
 
-        'label' => 'Navigation par pagination',
+        'heading' => 'Résumé',
 
-        'overview' => 'Affichage de :first à :last sur :total éléments',
-
-        'fields' => [
-
-            'records_per_page' => [
-
-                'label' => 'par page',
-
-                'options' => [
-                    'all' => 'Tous',
-                ],
-            ],
-
+        'subheadings' => [
+            'all' => 'Tous :label',
+            'group' => 'résumé de :group',
+            'page' => 'Cette page',
         ],
 
-        'buttons' => [
+        'summarizers' => [
 
-            'go_to_page' => [
-                'label' => 'Aller à la page :page',
+            'average' => [
+                'label' => 'Moyenne',
             ],
 
-            'next' => [
-                'label' => 'Suivant',
+            'count' => [
+                'label' => 'Compteur',
             ],
 
-            'previous' => [
-                'label' => 'Précédent',
+            'sum' => [
+                'label' => 'Somme',
             ],
 
         ],
 
     ],
 
-    'buttons' => [
+    'actions' => [
 
         'disable_reordering' => [
             'label' => 'Fin du classement des enregistrements',
@@ -74,8 +91,12 @@ return [
             'label' => 'Filtre',
         ],
 
-        'open_actions' => [
-            'label' => 'Actions ouvertes',
+        'group' => [
+            'label' => 'Groupe',
+        ],
+
+        'open_bulk_actions' => [
+            'label' => 'Ouvrir les actions',
         ],
 
         'toggle_columns' => [
@@ -85,19 +106,27 @@ return [
     ],
 
     'empty' => [
+
         'heading' => 'Aucun élément trouvé',
+
+        'description' => 'Créer un(e) :model pour commencer.',
+
     ],
 
     'filters' => [
 
-        'buttons' => [
+        'actions' => [
+
+            'apply' => [
+                'label' => 'Appliquer les filtres',
+            ],
 
             'remove' => [
                 'label' => 'Supprimer le filtre',
             ],
 
             'remove_all' => [
-                'label' => 'Supprimer tous les filters',
+                'label' => 'Supprimer tous les filtres',
                 'tooltip' => 'Supprimer tous les filtres',
             ],
 
@@ -106,6 +135,8 @@ return [
             ],
 
         ],
+
+        'heading' => 'Filtres',
 
         'indicator' => 'Filtres actifs',
 
@@ -131,13 +162,37 @@ return [
 
     ],
 
-    'reorder_indicator' => 'Faites glisser et déposez les enregistrements dans l\'ordre.',
+    'grouping' => [
+
+        'fields' => [
+
+            'group' => [
+                'label' => 'Grouper par',
+                'placeholder' => 'Grouper par',
+            ],
+
+            'direction' => [
+
+                'label' => 'Groupe',
+
+                'options' => [
+                    'asc' => 'Croissant',
+                    'desc' => 'Décroissant',
+                ],
+
+            ],
+
+        ],
+
+    ],
+
+    'reorder_indicator' => "Faites glisser et déposez les enregistrements dans l'ordre.",
 
     'selection_indicator' => [
 
-        'selected_count' => '1 élément sélectionné.|:count éléments sélectionnés.',
+        'selected_count' => '1 élément sélectionné|:count éléments sélectionnés',
 
-        'buttons' => [
+        'actions' => [
 
             'select_all' => [
                 'label' => 'Sélectionner tout (:count)',

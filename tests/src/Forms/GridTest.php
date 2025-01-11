@@ -20,12 +20,12 @@ test('can get number of container columns at all breakpoints', function () {
 
     expect($container)
         ->getColumns()
-            ->toHaveKey('default', $defaultColumns)
-            ->toHaveKey('sm', $columnsAtSm)
-            ->toHaveKey('md', $columnsAtMd)
-            ->toHaveKey('lg', $columnsAtLg)
-            ->toHaveKey('xl', $columnsAtXl)
-            ->toHaveKey('2xl', $columnsAt2xl);
+        ->toHaveKey('default', $defaultColumns)
+        ->toHaveKey('sm', $columnsAtSm)
+        ->toHaveKey('md', $columnsAtMd)
+        ->toHaveKey('lg', $columnsAtLg)
+        ->toHaveKey('xl', $columnsAtXl)
+        ->toHaveKey('2xl', $columnsAt2xl);
 });
 
 test('can get number of container columns at one breakpoint', function () {
@@ -40,7 +40,7 @@ test('can get number of container columns at one breakpoint', function () {
 
 test('can get number of container columns from parent component', function () {
     $container = ComponentContainer::make(Livewire::make())
-        ->parentComponent((new Component())->columns([
+        ->parentComponent((new Component)->columns([
             'default' => $defaultColumns = rand(1, 12),
             'sm' => $columnsAtSm = rand(1, 12),
             'md' => $columnsAtMd = rand(1, 12),
@@ -68,7 +68,7 @@ test('can set number of container columns at `lg` breakpoint', function () {
 });
 
 test('can get component column span at all breakpoints', function () {
-    $component = (new Component())
+    $component = (new Component)
         ->container(ComponentContainer::make(Livewire::make()))
         ->columnSpan([
             'default' => $defaultSpan = rand(1, 12),
@@ -81,16 +81,16 @@ test('can get component column span at all breakpoints', function () {
 
     expect($component)
         ->getColumnSpan()
-            ->toHaveKey('default', $defaultSpan)
-            ->toHaveKey('sm', $spanAtSm)
-            ->toHaveKey('md', $spanAtMd)
-            ->toHaveKey('lg', $spanAtLg)
-            ->toHaveKey('xl', $spanAtXl)
-            ->toHaveKey('2xl', $spanAt2xl);
+        ->toHaveKey('default', $defaultSpan)
+        ->toHaveKey('sm', $spanAtSm)
+        ->toHaveKey('md', $spanAtMd)
+        ->toHaveKey('lg', $spanAtLg)
+        ->toHaveKey('xl', $spanAtXl)
+        ->toHaveKey('2xl', $spanAt2xl);
 });
 
 test('can get component column span at one breakpoint', function () {
-    $component = (new Component())
+    $component = (new Component)
         ->container(ComponentContainer::make(Livewire::make()))
         ->columnSpan([
             '2xl' => $spanAt2xl = rand(1, 12),
@@ -101,7 +101,7 @@ test('can get component column span at one breakpoint', function () {
 });
 
 test('can set component column span at `default` breakpoint', function () {
-    $component = (new Component())
+    $component = (new Component)
         ->container(ComponentContainer::make(Livewire::make()))
         ->columnSpan($defaultSpan = rand(1, 12));
 

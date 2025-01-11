@@ -2,66 +2,82 @@
 
 return [
 
+    'column_toggle' => [
+
+        'heading' => 'Columnas',
+
+    ],
+
     'columns' => [
 
-        'tags' => [
-            'more' => 'y :count más',
+        'actions' => [
+            'label' => 'Acción|Acciones',
         ],
 
-        'messages' => [
-            'copied' => 'Copiado',
+        'text' => [
+
+            'actions' => [
+                'collapse_list' => 'Mostrar :count menos',
+                'expand_list' => 'Mostrar :count más',
+            ],
+
+            'more_list_items' => 'y :count más',
+
         ],
 
     ],
 
     'fields' => [
 
-        'search_query' => [
+        'bulk_select_page' => [
+            'label' => 'Seleccionar/deseleccionar todos los elementos para las acciones masivas.',
+        ],
+
+        'bulk_select_record' => [
+            'label' => 'Seleccionar/deseleccionar el elemento :key para las acciones masivas.',
+        ],
+
+        'bulk_select_group' => [
+            'label' => 'Seleccionar/deseleccionar grupo :title para acciones masivas.',
+        ],
+
+        'search' => [
             'label' => 'Búsqueda',
             'placeholder' => 'Buscar',
+            'indicator' => 'Buscar',
         ],
 
     ],
 
-    'pagination' => [
+    'summary' => [
 
-        'label' => 'Navegación de paginación',
+        'heading' => 'Resumen',
 
-        'overview' => 'Mostrando :first a :last de :total resultados',
-
-        'fields' => [
-
-            'records_per_page' => [
-
-                'label' => 'por página',
-
-                'options' => [
-                    'all' => 'Todos',
-                ],
-
-            ],
-
+        'subheadings' => [
+            'all' => 'Todos :label',
+            'group' => 'resumen del :group',
+            'page' => 'Esta página',
         ],
 
-        'buttons' => [
+        'summarizers' => [
 
-            'go_to_page' => [
-                'label' => 'Ir a la página :page',
+            'average' => [
+                'label' => 'Media',
             ],
 
-            'next' => [
-                'label' => 'Siguiente',
+            'count' => [
+                'label' => 'Recuento',
             ],
 
-            'previous' => [
-                'label' => 'Anterior',
+            'sum' => [
+                'label' => 'Suma',
             ],
 
         ],
 
     ],
 
-    'buttons' => [
+    'actions' => [
 
         'disable_reordering' => [
             'label' => 'Terminar de reordenar registros',
@@ -75,7 +91,11 @@ return [
             'label' => 'Filtrar',
         ],
 
-        'open_actions' => [
+        'group' => [
+            'label' => 'Grupo',
+        ],
+
+        'open_bulk_actions' => [
             'label' => 'Abrir acciones',
         ],
 
@@ -86,12 +106,20 @@ return [
     ],
 
     'empty' => [
+
         'heading' => 'No se encontraron registros',
+
+        'description' => 'Cree un :model para empezar.',
+
     ],
 
     'filters' => [
 
-        'buttons' => [
+        'actions' => [
+
+            'apply' => [
+                'label' => 'Aplicar filtros',
+            ],
 
             'remove' => [
                 'label' => 'Quitar filtro',
@@ -103,10 +131,12 @@ return [
             ],
 
             'reset' => [
-                'label' => 'Resetea los filtros',
+                'label' => 'Resetear los filtros',
             ],
 
         ],
+
+        'heading' => 'Filtros',
 
         'indicator' => 'Filtros activos',
 
@@ -132,13 +162,37 @@ return [
 
     ],
 
+    'grouping' => [
+
+        'fields' => [
+
+            'group' => [
+                'label' => 'Agrupar por',
+                'placeholder' => 'Agrupar por',
+            ],
+
+            'direction' => [
+
+                'label' => 'Dirección de grupo',
+
+                'options' => [
+                    'asc' => 'Ascendente',
+                    'desc' => 'Descendente',
+                ],
+
+            ],
+
+        ],
+
+    ],
+
     'reorder_indicator' => 'Arrastrar los registros en el orden.',
 
     'selection_indicator' => [
 
-        'selected_count' => '1 registro seleccionado.|:count registros seleccionados.',
+        'selected_count' => '1 registro seleccionado|:count registros seleccionados',
 
-        'buttons' => [
+        'actions' => [
 
             'select_all' => [
                 'label' => 'Selecciona todos :count',
@@ -162,7 +216,7 @@ return [
 
             'direction' => [
 
-                'label' => 'Dirección de orden',
+                'label' => 'Dirección del orden',
 
                 'options' => [
                     'asc' => 'Ascendente',

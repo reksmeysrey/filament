@@ -2,66 +2,82 @@
 
 return [
 
+    'column_toggle' => [
+
+        'heading' => 'Kolumnit',
+
+    ],
+
     'columns' => [
 
-        'tags' => [
-            'more' => 'ja :count lisää',
+        'actions' => [
+            'label' => 'Toiminta|Toiminnat',
         ],
 
-        'messages' => [
-            'copied' => 'Kopioitu',
+        'text' => [
+
+            'actions' => [
+                'collapse_list' => 'Näytä :count vähemmän',
+                'expand_list' => 'Näytä :count lisää',
+            ],
+
+            'more_list_items' => 'ja :count lisää',
+
         ],
 
     ],
 
     'fields' => [
 
-        'search_query' => [
+        'bulk_select_page' => [
+            'label' => 'Aseta/poista massatoiminnon valinta kaikista kohteista.',
+        ],
+
+        'bulk_select_record' => [
+            'label' => 'Aseta/poista massatoiminnon valinta kohteelle :key.',
+        ],
+
+        'bulk_select_group' => [
+            'label' => 'Aseta/poista massatoiminnon valinta ryhmälle :title.',
+        ],
+
+        'search' => [
             'label' => 'Etsi',
             'placeholder' => 'Etsi',
+            'indicator' => 'Etsi',
         ],
 
     ],
 
-    'pagination' => [
+    'summary' => [
 
-        'label' => 'Sivujen navigointi',
+        'heading' => 'Yhteenveto',
 
-        'overview' => 'Näytetään :first - :last / :total tulosta',
-
-        'fields' => [
-
-            'records_per_page' => [
-
-                'label' => 'per sivu',
-
-                'options' => [
-                    'all' => 'Kaikki',
-                ],
-
-            ],
-
+        'subheadings' => [
+            'all' => 'Kaikki :label',
+            'group' => ':group yhteenveto',
+            'page' => 'Tämä sivu',
         ],
 
-        'buttons' => [
+        'summarizers' => [
 
-            'go_to_page' => [
-                'label' => 'Mene sivulle :page',
+            'average' => [
+                'label' => 'Keskiarvo',
             ],
 
-            'next' => [
-                'label' => 'Seuraava',
+            'count' => [
+                'label' => 'Määrä',
             ],
 
-            'previous' => [
-                'label' => 'Edellinen',
+            'sum' => [
+                'label' => 'Summa',
             ],
 
         ],
 
     ],
 
-    'buttons' => [
+    'actions' => [
 
         'disable_reordering' => [
             'label' => 'Viimeistele tietueiden järjestely',
@@ -75,7 +91,11 @@ return [
             'label' => 'Suodata',
         ],
 
-        'open_actions' => [
+        'group' => [
+            'label' => 'Ryhmä',
+        ],
+
+        'open_bulk_actions' => [
             'label' => 'Avaa toiminnot',
         ],
 
@@ -86,12 +106,20 @@ return [
     ],
 
     'empty' => [
-        'heading' => 'Tietueita ei löytynyt',
+
+        'heading' => 'Ei :model',
+
+        'description' => 'Luo :model aloittaaksesi.',
+
     ],
 
     'filters' => [
 
-        'buttons' => [
+        'actions' => [
+
+            'apply' => [
+                'label' => 'Käytä suodattimet',
+            ],
 
             'remove' => [
                 'label' => 'Poista suodatin',
@@ -107,6 +135,8 @@ return [
             ],
 
         ],
+
+        'heading' => 'Suodattimet',
 
         'indicator' => 'Aktiiviset suodattimet',
 
@@ -132,13 +162,37 @@ return [
 
     ],
 
+    'grouping' => [
+
+        'fields' => [
+
+            'group' => [
+                'label' => 'Ryhmittele',
+                'placeholder' => 'Ryhmittele',
+            ],
+
+            'direction' => [
+
+                'label' => 'Ryhmittelyn suunta',
+
+                'options' => [
+                    'asc' => 'Nousevasti',
+                    'desc' => 'Laskevasti',
+                ],
+
+            ],
+
+        ],
+
+    ],
+
     'reorder_indicator' => 'Raahaa ja pudota tietueet järjestykseen.',
 
     'selection_indicator' => [
 
-        'selected_count' => '1 tietue valittu.|:count tietuetta valittu.',
+        'selected_count' => '1 tietue valittu|:count tietuetta valittu',
 
-        'buttons' => [
+        'actions' => [
 
             'select_all' => [
                 'label' => 'Valitse kaikki :count tietuetta',

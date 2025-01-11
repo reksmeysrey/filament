@@ -2,24 +2,36 @@
 
 namespace Filament\Pages;
 
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
 use Filament\Forms\ComponentContainer;
+use Filament\Forms\Form;
 use Filament\Notifications\Notification;
-use Filament\Pages\Actions\Action;
-use Filament\Pages\Contracts\HasFormActions;
-use Illuminate\Support\Str;
+use Filament\Pages\Concerns\CanUseDatabaseTransactions;
+use Filament\Pages\Concerns\HasUnsavedDataChangesAlert;
+use Filament\Support\Exceptions\Halt;
+use Filament\Support\Facades\FilamentView;
+use Throwable;
+
+use function Filament\Support\is_app_url;
 
 /**
  * @property ComponentContainer $form
  */
-class SettingsPage extends Page implements HasFormActions
+class SettingsPage extends Page
 {
-    use Concerns\HasFormActions;
+    use CanUseDatabaseTransactions;
+    use Concerns\InteractsWithFormActions;
+    use HasUnsavedDataChangesAlert;
 
     protected static string $settings;
 
     protected static string $view = 'filament-spatie-laravel-settings-plugin::pages.settings-page';
 
-    public $data;
+    /**
+     * @var array<string, mixed> | null
+     */
+    public ?array $data = [];
 
     public function mount(): void
     {
@@ -39,6 +51,10 @@ class SettingsPage extends Page implements HasFormActions
         $this->callHook('afterFill');
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     protected function mutateFormDataBeforeFill(array $data): array
     {
         return $data;
@@ -46,31 +62,49 @@ class SettingsPage extends Page implements HasFormActions
 
     public function save(): void
     {
-        $this->callHook('beforeValidate');
+        try {
+            $this->beginDatabaseTransaction();
 
-        $data = $this->form->getState();
+            $this->callHook('beforeValidate');
 
-        $this->callHook('afterValidate');
+            $data = $this->form->getState();
 
-        $data = $this->mutateFormDataBeforeSave($data);
+            $this->callHook('afterValidate');
 
-        $this->callHook('beforeSave');
+            $data = $this->mutateFormDataBeforeSave($data);
 
-        $settings = app(static::getSettings());
+            $this->callHook('beforeSave');
 
-        $settings->fill($data);
-        $settings->save();
+            $settings = app(static::getSettings());
 
-        $this->callHook('afterSave');
+            $settings->fill($data);
+            $settings->save();
+
+            $this->callHook('afterSave');
+
+            $this->commitDatabaseTransaction();
+        } catch (Halt $exception) {
+            $exception->shouldRollbackDatabaseTransaction() ?
+                $this->rollBackDatabaseTransaction() :
+                $this->commitDatabaseTransaction();
+
+            return;
+        } catch (Throwable $exception) {
+            $this->rollBackDatabaseTransaction();
+
+            throw $exception;
+        }
+
+        $this->rememberData();
 
         $this->getSavedNotification()?->send();
 
         if ($redirectUrl = $this->getRedirectUrl()) {
-            $this->redirect($redirectUrl);
+            $this->redirect($redirectUrl, navigate: FilamentView::hasSpaMode() && is_app_url($redirectUrl));
         }
     }
 
-    protected function getSavedNotification(): ?Notification
+    public function getSavedNotification(): ?Notification
     {
         $title = $this->getSavedNotificationTitle();
 
@@ -83,9 +117,9 @@ class SettingsPage extends Page implements HasFormActions
             ->title($title);
     }
 
-    protected function getSavedNotificationTitle(): ?string
+    public function getSavedNotificationTitle(): ?string
     {
-        return $this->getSavedNotificationMessage() ?? __('filament-spatie-laravel-settings-plugin::pages/settings-page.messages.saved');
+        return $this->getSavedNotificationMessage() ?? __('filament-spatie-laravel-settings-plugin::pages/settings-page.notifications.saved.title');
     }
 
     /**
@@ -96,15 +130,10 @@ class SettingsPage extends Page implements HasFormActions
         return null;
     }
 
-    protected function callHook(string $hook): void
-    {
-        if (! method_exists($this, $hook)) {
-            return;
-        }
-
-        $this->{$hook}();
-    }
-
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     protected function mutateFormDataBeforeSave(array $data): array
     {
         return $data;
@@ -112,20 +141,23 @@ class SettingsPage extends Page implements HasFormActions
 
     public static function getSettings(): string
     {
-        return static::$settings ?? (string) Str::of(class_basename(static::class))
-                ->beforeLast('Settings')
-                ->prepend('App\\Settings\\')
-                ->append('Settings');
+        return static::$settings ?? (string) str(class_basename(static::class))
+            ->beforeLast('Settings')
+            ->prepend('App\\Settings\\')
+            ->append('Settings');
     }
 
-    protected function getFormActions(): array
+    /**
+     * @return array<Action | ActionGroup>
+     */
+    public function getFormActions(): array
     {
         return [
             $this->getSaveFormAction(),
         ];
     }
 
-    protected function getSaveFormAction(): Action
+    public function getSaveFormAction(): Action
     {
         return Action::make('save')
             ->label(__('filament-spatie-laravel-settings-plugin::pages/settings-page.form.actions.save.label'))
@@ -133,23 +165,33 @@ class SettingsPage extends Page implements HasFormActions
             ->keyBindings(['mod+s']);
     }
 
-    protected function getSubmitFormAction(): Action
+    public function getSubmitFormAction(): Action
     {
         return $this->getSaveFormAction();
     }
 
+    public function form(Form $form): Form
+    {
+        return $form;
+    }
+
+    /**
+     * @return array<int | string, string | Form>
+     */
     protected function getForms(): array
     {
         return [
-            'form' => $this->makeForm()
-                ->schema($this->getFormSchema())
-                ->statePath('data')
-                ->columns(2)
-                ->inlineLabel(config('filament.layout.forms.have_inline_labels')),
+            'form' => $this->form(
+                $this->makeForm()
+                    ->schema($this->getFormSchema())
+                    ->statePath('data')
+                    ->columns(2)
+                    ->inlineLabel($this->hasInlineLabels()),
+            ),
         ];
     }
 
-    protected function getRedirectUrl(): ?string
+    public function getRedirectUrl(): ?string
     {
         return null;
     }

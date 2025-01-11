@@ -1,87 +1,67 @@
-<x-dynamic-component
-    :component="$getFieldWrapperView()"
-    :id="$getId()"
-    :label="$getLabel()"
-    :label-sr-only="$isLabelHidden()"
-    :helper-text="$getHelperText()"
-    :hint="$getHint()"
-    :hint-action="$getHintAction()"
-    :hint-color="$getHintColor()"
-    :hint-icon="$getHintIcon()"
-    :required="$isRequired()"
-    :state-path="$getStatePath()"
->
-    @if ($isInline())
-        <x-slot name="labelSuffix">
-    @endif
-            <x-filament-support::grid
-                :default="$getColumns('default')"
-                :sm="$getColumns('sm')"
-                :md="$getColumns('md')"
-                :lg="$getColumns('lg')"
-                :xl="$getColumns('xl')"
-                :two-xl="$getColumns('2xl')"
-                :is-grid="! $isInline()"
-                direction="column"
-                :attributes="$attributes->merge($getExtraAttributes())->class([
-                    'filament-forms-radio-component',
-                    'flex flex-wrap gap-3' => $isInline(),
-                    'gap-2' => ! $isInline(),
-                ])"
+@php
+    $gridDirection = $getGridDirection() ?? 'column';
+    $id = $getId();
+    $isDisabled = $isDisabled();
+    $isInline = $isInline();
+    $statePath = $getStatePath();
+@endphp
+
+<x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
+    <x-filament::grid
+        :default="$getColumns('default')"
+        :sm="$getColumns('sm')"
+        :md="$getColumns('md')"
+        :lg="$getColumns('lg')"
+        :xl="$getColumns('xl')"
+        :two-xl="$getColumns('2xl')"
+        :is-grid="! $isInline"
+        :direction="$gridDirection"
+        :attributes="
+            \Filament\Support\prepare_inherited_attributes($attributes)
+                ->merge($getExtraAttributes(), escape: false)
+                ->class([
+                    'fi-fo-radio gap-4',
+                    '-mt-4' => (! $isInline) && ($gridDirection === 'column'),
+                    'flex flex-wrap' => $isInline,
+                ])
+        "
+    >
+        @foreach ($getOptions() as $value => $label)
+            <div
+                @class([
+                    'break-inside-avoid pt-4' => (! $isInline) && ($gridDirection === 'column'),
+                ])
             >
-                @php
-                    $isDisabled = $isDisabled();
-                @endphp
+                <label class="flex gap-x-3">
+                    <x-filament::input.radio
+                        :valid="! $errors->has($statePath)"
+                        :attributes="
+                            \Filament\Support\prepare_inherited_attributes($getExtraInputAttributeBag())
+                                ->merge([
+                                    'disabled' => $isDisabled || $isOptionDisabled($value, $label),
+                                    'id' => $id . '-' . $value,
+                                    'name' => $id,
+                                    'value' => $value,
+                                    'wire:loading.attr' => 'disabled',
+                                    $applyStateBindingModifiers('wire:model') => $statePath,
+                                ], escape: false)
+                                ->class(['mt-1'])
+                        "
+                    />
 
-                @foreach ($getOptions() as $value => $label)
-                    <div @class([
-                        'flex items-start',
-                        'gap-3' => ! $isInline(),
-                        'gap-2' => $isInline(),
-                    ])>
-                        <div class="flex items-center h-5">
-                            <input
-                                name="{{ $getId() }}"
-                                id="{{ $getId() }}-{{ $value }}"
-                                type="radio"
-                                value="{{ $value }}"
-                                dusk="filament.forms.{{ $getStatePath() }}"
-                                {{ $applyStateBindingModifiers('wire:model') }}="{{ $getStatePath() }}"
-                                {{ $getExtraInputAttributeBag()->class([
-                                    'focus:ring-primary-500 h-4 w-4 text-primary-600 disabled:opacity-70',
-                                    'dark:bg-gray-700 dark:checked:bg-primary-500' => config('forms.dark_mode'),
-                                    'border-gray-300' => ! $errors->has($getStatePath()),
-                                    'dark:border-gray-500' => (! $errors->has($getStatePath())) && config('forms.dark_mode'),
-                                    'border-danger-600 ring-1 ring-inset ring-danger-600' => $errors->has($getStatePath()),
-                                ]) }}
-                                {!! ($isDisabled || $isOptionDisabled($value, $label)) ? 'disabled' : null !!}
-                                wire:loading.attr="disabled"
-                            />
-                        </div>
+                    <div class="grid text-sm leading-6">
+                        <span class="font-medium text-gray-950 dark:text-white">
+                            {{ $label }}
+                        </span>
 
-                        <div class="text-sm">
-                            <label for="{{ $getId() }}-{{ $value }}" @class([
-                                'font-medium',
-                                'text-gray-700' => ! $errors->has($getStatePath()),
-                                'dark:text-gray-200' => (! $errors->has($getStatePath())) && config('forms.dark_mode'),
-                                'text-danger-600' => $errors->has($getStatePath()),
-                            ])>
-                                {{ $label }}
-                            </label>
-
-                            @if ($hasDescription($value))
-                                <p @class([
-                                    'text-gray-500',
-                                    'dark:text-gray-400' => config('forms.dark_mode'),
-                                ])>
-                                    {{ $getDescription($value) }}
-                                </p>
-                            @endif
-                        </div>
+                        @if ($hasDescription($value))
+                            <p class="text-gray-500 dark:text-gray-400">
+                                {{ $getDescription($value) }}
+                            </p>
+                        @endif
                     </div>
-                @endforeach
-            </x-filament-support::grid>
-    @if ($isInline())
-        </x-slot>
-    @endif
+                </label>
+            </div>
+        @endforeach
+    </x-filament::grid>
 </x-dynamic-component>
