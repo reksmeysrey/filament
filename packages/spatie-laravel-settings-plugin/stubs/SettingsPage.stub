@@ -2,19 +2,22 @@
 
 namespace {{ namespace }};
 
-use App\Settings\{{ settingsClass }};
+{{ clusterImport }}use App\Settings\{{ settingsClass }};
+use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Pages\SettingsPage;
 
 class {{ class }} extends SettingsPage
 {
-    protected static ?string $navigationIcon = 'heroicon-o-cog';
+    protected static ?string $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static string $settings = {{ settingsClass }}::class;
+    protected static string $settings = {{ settingsClass }}::class;{{ clusterAssignment }}
 
-    protected function getFormSchema(): array
+    public function form(Form $form): Form
     {
-        return [
-            // ...
-        ];
+        return $form
+            ->schema([
+                // ...
+            ]);
     }
 }

@@ -2,64 +2,81 @@
 
 return [
 
+    'column_toggle' => [
+
+        'heading' => 'Sloupce',
+
+    ],
+
     'columns' => [
 
-        'tags' => [
-            'more' => 'a 1 další|a :count další| a :count dalších',
+        'actions' => [
+            'label' => 'Akce|Akce',
         ],
 
-        'messages' => [
-            'copied' => 'Zkopírováno',
+        'text' => [
+
+            'actions' => [
+                'collapse_list' => 'Zobrazit o :count méně',
+                'expand_list' => 'Zobrazit o :count více',
+            ],
+
+            'more_list_items' => 'a 1 další|a :count další| a :count dalších',
         ],
 
     ],
 
     'fields' => [
 
-        'search_query' => [
+        'bulk_select_page' => [
+            'label' => 'Vybrat/odznačit všechny položky pro hromadné akce.',
+        ],
+
+        'bulk_select_record' => [
+            'label' => 'Vybrat/odznačit položku :key pro hromadné akce.',
+        ],
+
+        'bulk_select_group' => [
+            'label' => 'Vybrat/zrušit výběr skupiny :title pro hromadné akce.',
+        ],
+
+        'search' => [
             'label' => 'Vyhledávání',
             'placeholder' => 'Hledat',
+            'indicator' => 'Hledat',
         ],
 
     ],
 
-    'pagination' => [
+    'summary' => [
 
-        'label' => 'Stránkování',
+        'heading' => 'Shrnutí',
 
-        'overview' => 'Zobrazeno od :first do :last z :total záznamů',
-
-        'fields' => [
-
-            'records_per_page' => [
-                'label' => 'na stránku',
-
-                'options' => [
-                    'all' => 'Vše',
-                ],
-            ],
-
+        'subheadings' => [
+            'all' => 'Všechny :label',
+            'group' => ':group shrnutí',
+            'page' => 'Tato stránka',
         ],
 
-        'buttons' => [
+        'summarizers' => [
 
-            'go_to_page' => [
-                'label' => 'Jít na stránku :page',
+            'average' => [
+                'label' => 'Průměr',
             ],
 
-            'next' => [
-                'label' => 'Další',
+            'count' => [
+                'label' => 'Počet',
             ],
 
-            'previous' => [
-                'label' => 'Předchozí',
+            'sum' => [
+                'label' => 'Součet',
             ],
 
         ],
 
     ],
 
-    'buttons' => [
+    'actions' => [
 
         'disable_reordering' => [
             'label' => 'Dokončit změnu pořadí položek',
@@ -73,7 +90,11 @@ return [
             'label' => 'Filtrovat',
         ],
 
-        'open_actions' => [
+        'group' => [
+            'label' => 'Seskupit',
+        ],
+
+        'open_bulk_actions' => [
             'label' => 'Otevřít panel akcí',
         ],
 
@@ -84,12 +105,20 @@ return [
     ],
 
     'empty' => [
+
         'heading' => 'Žádné záznamy nenalezeny',
+
+        'description' => 'Začněte vytvořením :modelu.',
+
     ],
 
     'filters' => [
 
-        'buttons' => [
+        'actions' => [
+
+            'apply' => [
+                'label' => 'Použít filtry',
+            ],
 
             'remove' => [
                 'label' => 'Odstranit filtr',
@@ -105,6 +134,8 @@ return [
             ],
 
         ],
+
+        'heading' => 'Filtrovat',
 
         'indicator' => 'Aktivní filtry',
 
@@ -130,13 +161,37 @@ return [
 
     ],
 
+    'grouping' => [
+
+        'fields' => [
+
+            'group' => [
+                'label' => 'Seskupit podle',
+                'placeholder' => 'Seskupit podle',
+            ],
+
+            'direction' => [
+
+                'label' => 'Směr seskupení',
+
+                'options' => [
+                    'asc' => 'Vzestupně',
+                    'desc' => 'Sestupně',
+                ],
+
+            ],
+
+        ],
+
+    ],
+
     'reorder_indicator' => 'Vyberte a přesuňte položky.',
 
     'selection_indicator' => [
 
-        'selected_count' => '{1} 1 záznam zvolen.|[2,4] :count záznamy zvoleny.|[5,*] :count záznamů zvoleno.',
+        'selected_count' => '{1} 1 záznam zvolen|[2,4] :count záznamy zvoleny|[5,*] :count záznamů zvoleno',
 
-        'buttons' => [
+        'actions' => [
 
             'select_all' => [
                 'label' => 'Označit všechny :count',

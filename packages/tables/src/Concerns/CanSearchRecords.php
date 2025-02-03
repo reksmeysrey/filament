@@ -2,96 +2,93 @@
 
 namespace Filament\Tables\Concerns;
 
+use Filament\Tables\Filters\Indicator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Arr;
 use RecursiveArrayIterator;
 use RecursiveIteratorIterator;
 
 trait CanSearchRecords
 {
-    public $tableColumnSearchQueries = [];
+    /**
+     * @var array<string, string | array<string, string | null> | null>
+     */
+    public array $tableColumnSearches = [];
 
-    public $tableSearchQuery = '';
+    /**
+     * @var ?string
+     */
+    public $tableSearch = '';
 
-    public function isTableSearchable(): bool
+    public function updatedTableSearch(): void
     {
-        foreach ($this->getCachedTableColumns() as $column) {
-            if (! $column->isGloballySearchable()) {
-                continue;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public function isTableSearchableByColumn(): bool
-    {
-        foreach ($this->getCachedTableColumns() as $column) {
-            if (! $column->isIndividuallySearchable()) {
-                continue;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public function updatedTableSearchQuery(): void
-    {
-        if ($this->shouldPersistTableSearchInSession()) {
+        if ($this->getTable()->persistsSearchInSession()) {
             session()->put(
                 $this->getTableSearchSessionKey(),
-                $this->tableSearchQuery,
+                $this->tableSearch,
             );
         }
 
-        $this->deselectAllTableRecords();
+        if ($this->getTable()->shouldDeselectAllRecordsWhenFiltered()) {
+            $this->deselectAllTableRecords();
+        }
 
         $this->resetPage();
     }
 
-    public function updatedTableColumnSearchQueries($value, $key): void
+    /**
+     * @param  string | null  $value
+     */
+    public function updatedTableColumnSearches($value = null, ?string $key = null): void
     {
-        if (blank($value)) {
-            unset($this->tableColumnSearchQueries[$key]);
+        if (blank($value) && filled($key)) {
+            Arr::forget($this->tableColumnSearches, $key);
         }
 
-        if ($this->shouldPersistTableColumnSearchInSession()) {
+        if ($this->getTable()->persistsColumnSearchesInSession()) {
             session()->put(
-                $this->getTableColumnSearchSessionKey(),
-                $this->tableColumnSearchQueries,
+                $this->getTableColumnSearchesSessionKey(),
+                $this->tableColumnSearches,
             );
         }
 
-        $this->deselectAllTableRecords();
+        if ($this->getTable()->shouldDeselectAllRecordsWhenFiltered()) {
+            $this->deselectAllTableRecords();
+        }
 
         $this->resetPage();
     }
 
     protected function applySearchToTableQuery(Builder $query): Builder
     {
-        $this->applyColumnSearchToTableQuery($query);
+        $this->applyColumnSearchesToTableQuery($query);
         $this->applyGlobalSearchToTableQuery($query);
 
         return $query;
     }
 
-    protected function applyColumnSearchToTableQuery(Builder $query): Builder
+    protected function applyColumnSearchesToTableQuery(Builder $query): Builder
     {
-        foreach ($this->getTableColumnSearchQueries() as $column => $search) {
-            if ($search === '') {
+        foreach ($this->getTableColumnSearches() as $column => $search) {
+            if (blank($search)) {
                 continue;
             }
 
-            $column = $this->getCachedTableColumn($column);
+            $column = $this->getTable()->getColumn($column);
 
             if (! $column) {
                 continue;
             }
 
-            foreach (explode(' ', $search) as $searchWord) {
+            if ($column->isHidden()) {
+                continue;
+            }
+
+            if (! $column->isIndividuallySearchable()) {
+                continue;
+            }
+
+            foreach ($this->extractTableSearchWords($search) as $searchWord) {
                 $query->where(function (Builder $query) use ($column, $searchWord) {
                     $isFirst = true;
 
@@ -99,7 +96,6 @@ trait CanSearchRecords
                         $query,
                         $searchWord,
                         $isFirst,
-                        isIndividual: true,
                     );
                 });
             }
@@ -108,19 +104,38 @@ trait CanSearchRecords
         return $query;
     }
 
+    /**
+     * @return array<string>
+     */
+    protected function extractTableSearchWords(string $search): array
+    {
+        return array_filter(
+            str_getcsv(preg_replace('/\s+/', ' ', $search), separator: ' ', escape: '\\'),
+            fn ($word): bool => filled($word),
+        );
+    }
+
     protected function applyGlobalSearchToTableQuery(Builder $query): Builder
     {
-        $search = $this->getTableSearchQuery();
+        $search = $this->getTableSearch();
 
-        if ($search === '') {
+        if (blank($search)) {
             return $query;
         }
 
-        foreach (explode(' ', $search) as $searchWord) {
+        foreach ($this->extractTableSearchWords($search) as $searchWord) {
             $query->where(function (Builder $query) use ($searchWord) {
                 $isFirst = true;
 
-                foreach ($this->getCachedTableColumns() as $column) {
+                foreach ($this->getTable()->getColumns() as $column) {
+                    if ($column->isHidden()) {
+                        continue;
+                    }
+
+                    if (! $column->isGloballySearchable()) {
+                        continue;
+                    }
+
                     $column->applySearchConstraint(
                         $query,
                         $searchWord,
@@ -133,24 +148,90 @@ trait CanSearchRecords
         return $query;
     }
 
-    protected function getTableSearchQuery(): string
+    public function getTableSearch(): ?string
     {
-        return trim(strtolower($this->tableSearchQuery));
+        return filled($this->tableSearch) ? trim(strval($this->tableSearch)) : null;
     }
 
-    protected function castTableColumnSearchQueries(array $searchQueries): array
+    public function hasTableSearch(): bool
+    {
+        return filled($this->tableSearch);
+    }
+
+    public function resetTableSearch(): void
+    {
+        $this->tableSearch = '';
+        $this->updatedTableSearch();
+    }
+
+    public function resetTableColumnSearch(string $column): void
+    {
+        $this->updatedTableColumnSearches(null, $column);
+    }
+
+    public function resetTableColumnSearches(): void
+    {
+        $this->tableColumnSearches = [];
+        $this->updatedTableColumnSearches();
+    }
+
+    public function getTableSearchIndicator(): Indicator
+    {
+        return Indicator::make(__('filament-tables::table.fields.search.indicator') . ': ' . $this->getTableSearch())
+            ->removeLivewireClickHandler('resetTableSearch');
+    }
+
+    /**
+     * @return array<Indicator>
+     */
+    public function getTableColumnSearchIndicators(): array
+    {
+        $indicators = [];
+
+        foreach ($this->getTable()->getColumns() as $column) {
+            if ($column->isHidden()) {
+                continue;
+            }
+
+            if (! $column->isIndividuallySearchable()) {
+                continue;
+            }
+
+            $columnName = $column->getName();
+
+            $search = Arr::get($this->tableColumnSearches, $columnName);
+
+            if (blank($search)) {
+                continue;
+            }
+
+            $indicators[] = Indicator::make("{$column->getLabel()}: {$search}")
+                ->removeLivewireClickHandler("resetTableColumnSearch('{$columnName}')");
+        }
+
+        return $indicators;
+    }
+
+    /**
+     * @param  array<string, string | array<string, string | null> | null>  $searches
+     * @return array<string, string | array<string, string | null> | null>
+     */
+    protected function castTableColumnSearches(array $searches): array
     {
         return array_map(
             fn ($search): array | string => is_array($search) ?
-                $this->castTableColumnSearchQueries($search) :
+                $this->castTableColumnSearches($search) :
                 strval($search),
-            $searchQueries,
+            $searches,
         );
     }
 
-    protected function getTableColumnSearchQueries(): array
+    /**
+     * @return array<string, string | null>
+     */
+    public function getTableColumnSearches(): array
     {
-        // Example input of `$this->tableColumnSearchQueries`:
+        // Example input of `$this->tableColumnSearches`:
         // [
         //     'number' => '12345 ',
         //     'customer' => [
@@ -158,14 +239,14 @@ trait CanSearchRecords
         //     ],
         // ]
 
-        // The `$this->tableColumnSearchQueries` array is potentially nested.
+        // The `$this->tableColumnSearches` array is potentially nested.
         // So, we iterate through it deeply:
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveArrayIterator($this->tableColumnSearchQueries),
+            new RecursiveArrayIterator($this->tableColumnSearches),
             RecursiveIteratorIterator::SELF_FIRST
         );
 
-        $searchQueries = [];
+        $searches = [];
         $path = [];
 
         foreach ($iterator as $key => $value) {
@@ -176,12 +257,12 @@ trait CanSearchRecords
             }
 
             // Nested array keys are flattened into `dot.syntax`.
-            $searchQueries[
+            $searches[
                 implode('.', array_slice($path, 0, $iterator->getDepth() + 1))
-            ] = trim(strtolower($value));
+            ] = trim(strval($value));
         }
 
-        return $searchQueries;
+        return $searches;
 
         // Example output:
         // [
@@ -197,18 +278,24 @@ trait CanSearchRecords
         return "tables.{$table}_search";
     }
 
-    protected function shouldPersistTableSearchInSession(): bool
-    {
-        return false;
-    }
-
-    public function getTableColumnSearchSessionKey(): string
+    public function getTableColumnSearchesSessionKey(): string
     {
         $table = class_basename($this::class);
 
         return "tables.{$table}_column_search";
     }
 
+    /**
+     * @deprecated Override the `table()` method to configure the table.
+     */
+    protected function shouldPersistTableSearchInSession(): bool
+    {
+        return false;
+    }
+
+    /**
+     * @deprecated Override the `table()` method to configure the table.
+     */
     protected function shouldPersistTableColumnSearchInSession(): bool
     {
         return false;

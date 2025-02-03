@@ -1,30 +1,87 @@
+@php
+    $isDisabled = $isDisabled();
+    $state = (bool) $getState();
+@endphp
+
 <div
-    x-data="{ error: undefined }"
-    {{ $attributes->merge($getExtraAttributes())->class([
-        'filament-tables-checkbox-column',
-    ]) }}
+    x-data="{
+        error: undefined,
+
+        isLoading: false,
+
+        name: @js($getName()),
+
+        recordKey: @js($recordKey),
+
+        state: @js($state),
+    }"
+    x-on:click.stop.prevent=""
+    x-init="
+        () => {
+            Livewire.hook('commit', ({ component, commit, succeed, fail, respond }) => {
+                succeed(({ snapshot, effect }) => {
+                    $nextTick(() => {
+                        if (component.id !== @js($this->getId())) {
+                            return
+                        }
+
+                        if (! $refs.newState) {
+                            return
+                        }
+
+                        const newState = $refs.newState.value === '1' ? true : false
+
+                        if (state === newState) {
+                            return
+                        }
+
+                        state = newState
+                    })
+                })
+            })
+        }
+    "
+    {{
+        $attributes
+            ->merge($getExtraAttributes(), escape: false)
+            ->class([
+                'fi-ta-checkbox flex items-center',
+                'px-3 py-4' => ! $isInline(),
+            ])
+    }}
 >
-    <input
-        @checked($getState())
-        {!! $isDisabled() ? 'disabled' : null !!}
-        type="checkbox"
+    <input type="hidden" value="{{ $state ? 1 : 0 }}" x-ref="newState" />
+
+    <x-filament::input.checkbox
+        alpine-valid="! error"
+        :disabled="$isDisabled"
+        :x-bind:disabled="$isDisabled ? null : 'isLoading'"
+        x-model="state"
         x-on:change="
-            response = await $wire.setColumnValue(@js($getName()), @js($recordKey), $event.target.checked)
+            isLoading = true
+
+            const response = await $wire.updateTableColumnState(
+                name,
+                recordKey,
+                $event.target.checked,
+            )
+
             error = response?.error ?? undefined
+
+            isLoading = false
         "
-        x-tooltip="error"
-        {{
-            $attributes
-                ->merge($getExtraInputAttributeBag()->getAttributes())
-                ->class([
-                    'ml-4 text-primary-600 transition duration-75 rounded shadow-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500 disabled:opacity-70',
-                    'dark:bg-gray-700 dark:checked:bg-primary-500' => config('forms.dark_mode'),
-                ])
-        }}
-        x-bind:class="{
-            'border-gray-300': ! error,
-            'dark:border-gray-600': (! error) && @js(config('forms.dark_mode')),
-            'border-danger-600 ring-1 ring-inset ring-danger-600': error,
-        }"
+        x-tooltip="
+            error === undefined
+                ? false
+                : {
+                    content: error,
+                    theme: $store.theme,
+                }
+        "
+        x-on:click.stop=""
+        :attributes="
+            \Filament\Support\prepare_inherited_attributes($attributes)
+                ->merge($getExtraInputAttributes(), escape: false)
+        "
     />
 </div>

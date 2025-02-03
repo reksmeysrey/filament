@@ -13,6 +13,10 @@ trait BelongsToModel
 
     protected ?Closure $saveRelationshipsUsing = null;
 
+    protected ?Closure $saveRelationshipsBeforeChildrenUsing = null;
+
+    protected bool | Closure $shouldSaveRelationshipsWhenDisabled = false;
+
     protected bool | Closure $shouldSaveRelationshipsWhenHidden = false;
 
     public function model(Model | string | Closure | null $model = null): static
@@ -27,6 +31,37 @@ trait BelongsToModel
         $callback = $this->saveRelationshipsUsing;
 
         if (! $callback) {
+            return;
+        }
+
+        if (! ($this->getRecord()?->exists)) {
+            return;
+        }
+
+        if ((! $this->shouldSaveRelationshipsWhenDisabled()) && $this->isDisabled()) {
+            return;
+        }
+
+        if ((! $this->shouldSaveRelationshipsWhenHidden()) && $this->isHidden()) {
+            return;
+        }
+
+        $this->evaluate($callback);
+    }
+
+    public function saveRelationshipsBeforeChildren(): void
+    {
+        $callback = $this->saveRelationshipsBeforeChildrenUsing;
+
+        if (! $callback) {
+            return;
+        }
+
+        if (! ($this->getRecord()?->exists)) {
+            return;
+        }
+
+        if ((! $this->shouldSaveRelationshipsWhenDisabled()) && $this->isDisabled()) {
             return;
         }
 
@@ -67,6 +102,25 @@ trait BelongsToModel
         $this->saveRelationshipsUsing = $callback;
 
         return $this;
+    }
+
+    public function saveRelationshipsBeforeChildrenUsing(?Closure $callback): static
+    {
+        $this->saveRelationshipsBeforeChildrenUsing = $callback;
+
+        return $this;
+    }
+
+    public function saveRelationshipsWhenDisabled(bool | Closure $condition = true): static
+    {
+        $this->shouldSaveRelationshipsWhenDisabled = $condition;
+
+        return $this;
+    }
+
+    public function shouldSaveRelationshipsWhenDisabled(): bool
+    {
+        return (bool) $this->evaluate($this->shouldSaveRelationshipsWhenDisabled);
     }
 
     public function saveRelationshipsWhenHidden(bool | Closure $condition = true): static

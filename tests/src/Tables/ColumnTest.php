@@ -1,9 +1,12 @@
 <?php
 
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tests\Models\Post;
 use Filament\Tests\Tables\Fixtures\PostsTable;
 use Filament\Tests\Tables\TestCase;
-use function Pest\Livewire\livewire;
+
+use function Filament\Tests\livewire;
 
 uses(TestCase::class);
 
@@ -52,6 +55,17 @@ it('can search records', function () {
         ->assertCanNotSeeTableRecords($posts->where('title', '!=', $title));
 });
 
+it('can search individual column records', function () {
+    $posts = Post::factory()->count(10)->create();
+
+    $content = $posts->first()->content;
+
+    livewire(PostsTable::class)
+        ->searchTableColumns(['content' => $content])
+        ->assertCanSeeTableRecords($posts->where('content', $content))
+        ->assertCanNotSeeTableRecords($posts->where('content', '!=', $content));
+});
+
 it('can search posts with relationship', function () {
     $posts = Post::factory()->count(10)->create();
 
@@ -61,6 +75,32 @@ it('can search posts with relationship', function () {
         ->searchTable($author)
         ->assertCanSeeTableRecords($posts->where('author.name', $author))
         ->assertCanNotSeeTableRecords($posts->where('author.name', '!=', $author));
+});
+
+it('can search individual column records with relationship', function () {
+    $posts = Post::factory()->count(10)->create();
+
+    $authorEmail = $posts->first()->author->email;
+
+    livewire(PostsTable::class)
+        ->searchTableColumns(['author.email' => $authorEmail])
+        ->assertCanSeeTableRecords($posts->where('author.email', $authorEmail))
+        ->assertCanNotSeeTableRecords($posts->where('author.email', '!=', $authorEmail));
+});
+
+it('can search multiple individual columns', function () {
+    $posts = Post::factory()->count(10)->create();
+
+    $content = $posts->first()->content;
+    $authorEmail = $posts->first()->author->email;
+
+    livewire(PostsTable::class)
+        ->searchTableColumns([
+            'content' => $content,
+            'author.email' => $authorEmail,
+        ])
+        ->assertCanSeeTableRecords($posts->where('author.email', $authorEmail))
+        ->assertCanNotSeeTableRecords($posts->where('author.email', '!=', $authorEmail));
 });
 
 it('can hide a column', function () {
@@ -74,7 +114,7 @@ it('can call a column action', function () {
 
     livewire(PostsTable::class)
         ->callTableColumnAction('title', $post)
-        ->assertEmitted('title-action-called');
+        ->assertDispatched('title-action-called');
 });
 
 it('can call a column action object', function () {
@@ -82,7 +122,7 @@ it('can call a column action object', function () {
 
     livewire(PostsTable::class)
         ->callTableAction('column-action-object', $post)
-        ->assertEmitted('column-action-object-called');
+        ->assertDispatched('column-action-object-called');
 });
 
 it('can state whether a column has the correct value', function () {
@@ -91,4 +131,91 @@ it('can state whether a column has the correct value', function () {
     livewire(PostsTable::class)
         ->assertTableColumnStateSet('with_state', 'correct state', $post)
         ->assertTableColumnStateNotSet('with_state', 'incorrect state', $post);
+});
+
+it('can state whether a column has the correct formatted value', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostsTable::class)
+        ->assertTableColumnFormattedStateSet('formatted_state', 'formatted state', $post)
+        ->assertTableColumnFormattedStateNotSet('formatted_state', 'incorrect formatted state', $post);
+});
+
+it('can output values in a JSON array column of objects', function () {
+    $post = Post::factory()->create([
+        'json_array_of_objects' => [
+            ['value' => 'foo'],
+            ['value' => 'bar'],
+            ['value' => 'baz'],
+        ],
+    ]);
+
+    livewire(PostsTable::class)
+        ->assertTableColumnStateSet('json_array_of_objects.*.value', ['foo', 'bar', 'baz'], $post);
+});
+
+it('can state whether a column has extra attributes', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostsTable::class)
+        ->assertTableColumnHasExtraAttributes('extra_attributes', ['class' => 'text-danger-500'], $post)
+        ->assertTableColumnDoesNotHaveExtraAttributes('extra_attributes', ['class' => 'text-primary-500'], $post);
+});
+
+it('can state whether a column has a description', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostsTable::class)
+        ->assertTableColumnHasDescription('with_description', 'description below', $post)
+        ->assertTableColumnHasDescription('with_description', 'description above', $post, 'above')
+        ->assertTableColumnDoesNotHaveDescription('with_description', 'incorrect description below', $post)
+        ->assertTableColumnDoesNotHaveDescription('with_description', 'incorrect description above', $post, 'above');
+});
+
+it('can state whether a select column has options', function () {
+    $post = Post::factory()->create();
+
+    livewire(PostsTable::class)
+        ->assertTableSelectColumnHasOptions('with_options', ['red' => 'Red', 'blue' => 'Blue'], $post)
+        ->assertTableSelectColumnDoesNotHaveOptions('with_options', ['one' => 'One', 'two' => 'Two'], $post);
+});
+
+it('can assert that a column exists with the given configuration', function () {
+    $publishedPost = Post::factory()->create([
+        'is_published' => true,
+    ]);
+
+    livewire(PostsTable::class)
+        ->assertTableColumnExists('title2', function (TextColumn $column) {
+            return $column->isSortable() &&
+                $column->isSearchable() &&
+                $column->getPrefix() == 'published';
+        }, $publishedPost);
+
+    $unpublishedPost = Post::factory()->create([
+        'is_published' => false,
+    ]);
+
+    livewire(PostsTable::class)
+        ->assertTableColumnExists('title2', function (TextColumn $column) {
+            return $column->getPrefix() == 'unpublished';
+        }, $unpublishedPost);
+
+    $this->expectException('PHPUnit\Framework\ExpectationFailedException');
+    $this->expectExceptionMessage('Failed asserting that a column with the name [title] and provided configuration exists on the [' . PostsTable::class . '] component');
+
+    livewire(PostsTable::class)
+        ->assertTableColumnExists('title', function (TextColumn $column) {
+            return $column->isTime();
+        }, $publishedPost);
+});
+
+it('can automatically detect boolean cast attribute in icon column', function () {
+    $post = Post::factory()
+        ->create(['is_published' => false]);
+
+    livewire(PostsTable::class)
+        ->assertTableColumnExists('is_published', function (IconColumn $column) {
+            return $column->isBoolean();
+        }, $post);
 });

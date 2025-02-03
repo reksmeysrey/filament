@@ -18,13 +18,19 @@ trait BelongsToModel
     public function saveRelationships(): void
     {
         foreach ($this->getComponents(withHidden: true) as $component) {
+            $component->saveRelationshipsBeforeChildren();
+
+            $shouldSaveRelationshipsWhenDisabled = $component->shouldSaveRelationshipsWhenDisabled();
+
             foreach ($component->getChildComponentContainers(withHidden: $component->shouldSaveRelationshipsWhenHidden()) as $container) {
+                if ((! $shouldSaveRelationshipsWhenDisabled) && $container->isDisabled()) {
+                    continue;
+                }
+
                 $container->saveRelationships();
             }
 
-            if ($component->getRecord()?->exists) {
-                $component->saveRelationships();
-            }
+            $component->saveRelationships();
         }
     }
 
