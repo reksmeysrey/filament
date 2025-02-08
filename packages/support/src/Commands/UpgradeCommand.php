@@ -2,26 +2,31 @@
 
 namespace Filament\Support\Commands;
 
+use Filament\Support\Events\FilamentUpgraded;
 use Illuminate\Console\Command;
+use Symfony\Component\Console\Attribute\AsCommand;
 
+#[AsCommand(name: 'filament:upgrade')]
 class UpgradeCommand extends Command
 {
-    protected $description = 'Upgrade Filament to the latest version.';
+    protected $description = 'Upgrade Filament to the latest version';
 
     protected $signature = 'filament:upgrade';
 
     public function handle(): int
     {
         foreach ([
+            AssetsCommand::class,
             'config:clear',
-            'livewire:discover',
             'route:clear',
             'view:clear',
         ] as $command) {
             $this->call($command);
         }
 
-        $this->info('Successfully upgraded!');
+        FilamentUpgraded::dispatch();
+
+        $this->components->info('Successfully upgraded!');
 
         return static::SUCCESS;
     }

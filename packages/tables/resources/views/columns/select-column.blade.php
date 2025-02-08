@@ -1,42 +1,114 @@
+@php
+    $canSelectPlaceholder = $canSelectPlaceholder();
+    $isDisabled = $isDisabled();
+
+    $state = $getState();
+    if ($state instanceof \BackedEnum) {
+        $state = $state->value;
+    }
+    $state = strval($state);
+@endphp
+
 <div
-    x-data="{ error: undefined }"
-    {{ $attributes->merge($getExtraAttributes())->class([
-        'filament-tables-select-column',
-    ]) }}
+    x-data="{
+        error: undefined,
+
+        isLoading: false,
+
+        name: @js($getName()),
+
+        recordKey: @js($recordKey),
+
+        state: @js($state),
+    }"
+    x-init="
+        () => {
+            Livewire.hook('commit', ({ component, commit, succeed, fail, respond }) => {
+                succeed(({ snapshot, effect }) => {
+                    $nextTick(() => {
+                        if (component.id !== @js($this->getId())) {
+                            return
+                        }
+
+                        if (! $refs.newState) {
+                            return
+                        }
+
+                        let newState = $refs.newState.value.replaceAll('\\'+String.fromCharCode(34), String.fromCharCode(34))
+
+                        if (state === newState) {
+                            return
+                        }
+
+                        state = newState
+                    })
+                })
+            })
+        }
+    "
+    {{
+        $attributes
+            ->merge($getExtraAttributes(), escape: false)
+            ->class([
+                'fi-ta-select w-full min-w-48',
+                'px-3 py-4' => ! $isInline(),
+            ])
+    }}
 >
-    <select
-        {!! $isDisabled() ? 'disabled' : null !!}
-        x-on:change="
-            response = await $wire.setColumnValue(@js($getName()), @js($recordKey), $event.target.value)
-            error = response?.error ?? undefined
+    <input
+        type="hidden"
+        value="{{ str($state)->replace('"', '\\"') }}"
+        x-ref="newState"
+    />
+
+    <x-filament::input.wrapper
+        :alpine-disabled="'isLoading || ' . \Illuminate\Support\Js::from($isDisabled)"
+        alpine-valid="error === undefined"
+        x-tooltip="
+            error === undefined
+                ? false
+                : {
+                    content: error,
+                    theme: $store.theme,
+                }
         "
-        x-tooltip="error"
-        {{ $attributes->merge($getExtraInputAttributes())->merge($getExtraAttributes())->class([
-            'ml-0.5 text-gray-900 block transition duration-75 rounded-lg shadow-sm focus:ring-primary-500 focus:ring-1 focus:ring-inset focus:border-primary-500 disabled:opacity-70',
-            'dark:bg-gray-700 dark:text-white dark:focus:border-primary-500' => config('forms.dark_mode'),
-        ]) }}
-        x-bind:class="{
-            'border-gray-300': ! error,
-            'dark:border-gray-600': (! error) && @js(config('forms.dark_mode')),
-            'border-danger-600 ring-1 ring-inset ring-danger-600': error,
-        }"
+        x-on:click.stop.prevent=""
     >
-        @php
-            $state = $getState();
-        @endphp
+        <x-filament::input.select
+            :disabled="$isDisabled"
+            :x-bind:disabled="$isDisabled ? null : 'isLoading'"
+            x-model="state"
+            x-on:change="
+                isLoading = true
 
-        @unless ($isPlaceholderSelectionDisabled())
-            <option value="">{{ $getPlaceholder() }}</option>
-        @endif
+                const response = await $wire.updateTableColumnState(
+                    name,
+                    recordKey,
+                    $event.target.value,
+                )
 
-        @foreach ($getOptions() as $value => $label)
-            <option
-                value="{{ $value }}"
-                {!! $isOptionDisabled($value, $label) ? 'disabled' : null !!}
-                {{ $getState() === $value ? 'selected' : null }}
-            >
-                {{ $label }}
-            </option>
-        @endforeach
-    </select>
+                error = response?.error ?? undefined
+
+                if (! error) {
+                    state = response
+                }
+
+                isLoading = false
+            "
+            :attributes="\Filament\Support\prepare_inherited_attributes($getExtraInputAttributeBag())"
+        >
+            @if ($canSelectPlaceholder)
+                <option value="">{{ $getPlaceholder() }}</option>
+            @endif
+
+            @foreach ($getOptions() as $value => $label)
+                <option
+                    @disabled($isOptionDisabled($value, $label))
+                    value="{{ $value }}"
+                >
+                    {{ $label }}
+                </option>
+            @endforeach
+        </x-filament::input.select>
+    </x-filament::input.wrapper>
 </div>

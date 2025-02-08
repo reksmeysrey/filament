@@ -3,8 +3,6 @@
 namespace Filament\Forms\Components;
 
 /**
- * @deprecated use Repeater with the `relationship()` method instead.
+ * @deprecated Use `Repeater` with the `relationship()` method instead.
  */
-class MorphManyRepeater extends RelationshipRepeater
-{
-}
+class MorphManyRepeater extends RelationshipRepeater {}

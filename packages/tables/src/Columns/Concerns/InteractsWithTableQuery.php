@@ -3,24 +3,27 @@
 namespace Filament\Tables\Columns\Concerns;
 
 use Illuminate\Database\Connection;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Relations\Relation;
-use Illuminate\Support\Str;
+use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Arr;
+
+use function Filament\Support\generate_search_column_expression;
+use function Filament\Support\generate_search_term_expression;
 
 trait InteractsWithTableQuery
 {
-    public function applyRelationshipAggregates(Builder $query): Builder
+    public function applyRelationshipAggregates(EloquentBuilder | Relation $query): EloquentBuilder | Relation
     {
         return $query->when(
             filled([$this->getRelationshipToAvg(), $this->getColumnToAvg()]),
             fn ($query) => $query->withAvg($this->getRelationshipToAvg(), $this->getColumnToAvg())
         )->when(
-            filled($this->getRelationshipToCount()),
-            fn ($query) => $query->withCount([$this->getRelationshipToCount()])
+            filled($this->getRelationshipsToCount()),
+            fn ($query) => $query->withCount(Arr::wrap($this->getRelationshipsToCount()))
         )->when(
-            filled($this->getRelationshipToExistenceCheck()),
-            fn ($query) => $query->withExists($this->getRelationshipToExistenceCheck())
+            filled($this->getRelationshipsToExistenceCheck()),
+            fn ($query) => $query->withExists(Arr::wrap($this->getRelationshipsToExistenceCheck()))
         )->when(
             filled([$this->getRelationshipToMax(), $this->getColumnToMax()]),
             fn ($query) => $query->withMax($this->getRelationshipToMax(), $this->getColumnToMax())
@@ -33,38 +36,33 @@ trait InteractsWithTableQuery
         );
     }
 
-    public function applyEagerLoading(Builder $query): Builder
+    public function applyEagerLoading(EloquentBuilder | Relation $query): EloquentBuilder | Relation
     {
-        if ($this->isHidden()) {
+        if (! $this->hasRelationship($query->getModel())) {
             return $query;
         }
 
-        if ($this->queriesRelationships($query->getModel())) {
-            $query->with([$this->getRelationshipName()]);
+        $relationshipName = $this->getRelationshipName();
+
+        if (array_key_exists($relationshipName, $query->getEagerLoads())) {
+            return $query;
         }
 
-        return $query;
+        return $query->with([$relationshipName]);
     }
 
-    public function applySearchConstraint(Builder $query, string $search, bool &$isFirst, bool $isIndividual = false): Builder
+    public function applySearchConstraint(EloquentBuilder $query, string $search, bool &$isFirst): EloquentBuilder
     {
-        if ($this->isHidden()) {
-            return $query;
-        }
-
-        if ($isIndividual && (! $this->isIndividuallySearchable())) {
-            return $query;
-        }
-
-        if ((! $isIndividual) && (! $this->isGloballySearchable())) {
-            return $query;
-        }
-
         if ($this->searchQuery) {
-            $this->evaluate($this->searchQuery, [
-                'query' => $query,
-                'search' => $search,
-            ]);
+            $whereClause = $isFirst ? 'where' : 'orWhere';
+
+            $query->{$whereClause}(
+                fn ($query) => $this->evaluate($this->searchQuery, [
+                    'query' => $query,
+                    'search' => $search,
+                    'searchQuery' => $search,
+                ]),
+            );
 
             $isFirst = false;
 
@@ -74,44 +72,43 @@ trait InteractsWithTableQuery
         /** @var Connection $databaseConnection */
         $databaseConnection = $query->getConnection();
 
-        $searchOperator = match ($databaseConnection->getDriverName()) {
-            'pgsql' => 'ilike',
-            default => 'like',
-        };
-
         $model = $query->getModel();
 
-        foreach ($this->getSearchColumns() as $searchColumnName) {
+        $isSearchForcedCaseInsensitive = $this->isSearchForcedCaseInsensitive();
+
+        $nonTranslatableSearch = generate_search_term_expression($search, $isSearchForcedCaseInsensitive, $databaseConnection);
+
+        $translatableContentDriver = $this->getLivewire()->makeFilamentTranslatableContentDriver();
+
+        foreach ($this->getSearchColumns() as $searchColumn) {
             $whereClause = $isFirst ? 'where' : 'orWhere';
 
             $query->when(
-                method_exists($model, 'isTranslatableAttribute') && $model->isTranslatableAttribute($searchColumnName),
-                function (Builder $query) use ($searchColumnName, $searchOperator, $search, $whereClause, $databaseConnection): Builder {
-                    $activeLocale = $this->getLivewire()->getActiveTableLocale() ?: app()->getLocale();
-
-                    $searchColumn = match ($databaseConnection->getDriverName()) {
-                        'pgsql' => "{$searchColumnName}->>'{$activeLocale}'",
-                        default => "json_extract({$searchColumnName}, \"$.{$activeLocale}\")",
-                    };
-
-                    return $query->{"{$whereClause}Raw"}(
-                        "lower({$searchColumn}) {$searchOperator} ?",
-                        "%{$search}%",
-                    );
-                },
-                fn (Builder $query): Builder => $query->when(
-                    $this->queriesRelationships($query->getModel()),
-                    fn (Builder $query): Builder => $query->{"{$whereClause}Relation"}(
+                $translatableContentDriver?->isAttributeTranslatable($model::class, attribute: $searchColumn),
+                fn (EloquentBuilder $query): EloquentBuilder => $translatableContentDriver->applySearchConstraintToQuery($query, $searchColumn, $search, $whereClause, $isSearchForcedCaseInsensitive),
+                fn (EloquentBuilder $query) => $query->when(
+                    $this->hasRelationship($query->getModel()),
+                    fn (EloquentBuilder $query): EloquentBuilder => $query->{"{$whereClause}Relation"}(
                         $this->getRelationshipName(),
-                        $searchColumnName,
-                        $searchOperator,
-                        "%{$search}%",
+                        generate_search_column_expression($searchColumn, $isSearchForcedCaseInsensitive, $databaseConnection),
+                        'like',
+                        "%{$nonTranslatableSearch}%",
                     ),
-                    fn (Builder $query): Builder => $query->{$whereClause}(
-                        $searchColumnName,
-                        $searchOperator,
-                        "%{$search}%",
-                    ),
+                    function (EloquentBuilder $query) use ($databaseConnection, $isSearchForcedCaseInsensitive, $nonTranslatableSearch, $searchColumn, $whereClause): EloquentBuilder {
+                        // Treat the missing "relationship" as a JSON column if dot notation is used in the column name.
+                        if (filled($relationshipName = $this->getRelationshipName())) {
+                            $searchColumn = (string) str($relationshipName)
+                                ->append('.')
+                                ->append($searchColumn)
+                                ->replace('.', '->');
+                        }
+
+                        return $query->{$whereClause}(
+                            generate_search_column_expression($searchColumn, $isSearchForcedCaseInsensitive, $databaseConnection),
+                            'like',
+                            "%{$nonTranslatableSearch}%",
+                        );
+                    },
                 ),
             );
 
@@ -121,16 +118,8 @@ trait InteractsWithTableQuery
         return $query;
     }
 
-    public function applySort(Builder $query, string $direction = 'asc'): Builder
+    public function applySort(EloquentBuilder $query, string $direction = 'asc'): EloquentBuilder
     {
-        if ($this->isHidden()) {
-            return $query;
-        }
-
-        if (! $this->isSortable()) {
-            return $query;
-        }
-
         if ($this->sortQuery) {
             $this->evaluate($this->sortQuery, [
                 'direction' => $direction,
@@ -141,62 +130,50 @@ trait InteractsWithTableQuery
         }
 
         foreach (array_reverse($this->getSortColumns()) as $sortColumn) {
-            $relationship = $this->getRelationship($query->getModel());
-
-            $query->when(
-                $relationship,
-                fn ($query) => $query->orderBy(
-                    $relationship
-                        ->getRelationExistenceQuery(
-                            $relationship->getRelated()::query(),
-                            $query,
-                            $sortColumn,
-                        )
-                        ->applyScopes()
-                        ->getQuery(),
-                    $direction,
-                ),
-                fn ($query) => $query->orderBy($sortColumn, $direction),
-            );
+            $query->orderBy($this->getSortColumnForQuery($query, $sortColumn), $direction);
         }
 
         return $query;
     }
 
-    public function queriesRelationships(Model $record): bool
+    /**
+     * @param  array<string> | null  $relationships
+     */
+    protected function getSortColumnForQuery(EloquentBuilder $query, string $sortColumn, ?array $relationships = null): string | Builder
     {
-        return $this->getRelationship($record) !== null;
-    }
+        $relationships ??= ($relationshipName = $this->getRelationshipName()) ?
+            explode('.', $relationshipName) :
+            [];
 
-    public function getRelationship(Model $record): ?Relation
-    {
-        if (! Str::of($this->getName())->contains('.')) {
-            return null;
+        if (! count($relationships)) {
+            return $sortColumn;
         }
 
-        $relationship = null;
+        $currentRelationshipName = array_shift($relationships);
 
-        foreach (explode('.', $this->getRelationshipName()) as $nestedRelationshipName) {
-            if (! $record->isRelation($nestedRelationshipName)) {
-                $relationship = null;
+        $relationship = $this->getRelationship($query->getModel(), $currentRelationshipName);
 
-                break;
-            }
-
-            $relationship = $record->{$nestedRelationshipName}();
-            $record = $relationship->getRelated();
+        if (! $relationship) {
+            // Treat the missing "relationship" as a JSON column if dot notation is used in the column name.
+            return (string) str($relationshipName ?? $this->getRelationshipName())
+                ->append('.')
+                ->append($sortColumn)
+                ->replace('.', '->');
         }
 
-        return $relationship;
-    }
+        $relatedQuery = $relationship->getRelated()::query();
 
-    public function getRelationshipTitleColumnName(): string
-    {
-        return (string) Str::of($this->getName())->afterLast('.');
-    }
-
-    public function getRelationshipName(): string
-    {
-        return (string) Str::of($this->getName())->beforeLast('.');
+        return $relationship
+            ->getRelationExistenceQuery(
+                $relatedQuery,
+                $query,
+                [$currentRelationshipName => $this->getSortColumnForQuery(
+                    $relatedQuery,
+                    $sortColumn,
+                    $relationships,
+                )],
+            )
+            ->applyScopes()
+            ->getQuery();
     }
 }

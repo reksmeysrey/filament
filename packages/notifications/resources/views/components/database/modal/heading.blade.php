@@ -2,17 +2,17 @@
     'unreadNotificationsCount',
 ])
 
-<x-notifications::modal.heading class="relative">
-    <span>
-        {{ __('notifications::database.modal.heading') }}
-    </span>
+<x-filament::modal.heading>
+    <span class="relative">
+        {{ __('filament-notifications::database.modal.heading') }}
 
-    @if ($unreadNotificationsCount)
-        <span @class([
-            'inline-flex absolute items-center justify-center top-0 ml-1 min-w-[1rem] h-4 rounded-full text-xs text-primary-700 bg-primary-500/10',
-            'dark:text-primary-500' => config('tables.dark_mode'),
-        ])>
-            {{ $unreadNotificationsCount }}
-        </span>
-    @endif
-</x-notifications::modal.heading>
+        @if ($unreadNotificationsCount)
+            <x-filament::badge
+                size="xs"
+                class="absolute -top-1 start-full ms-1 w-max"
+            >
+                {{ $unreadNotificationsCount }}
+            </x-filament::badge>
+        @endif
+    </span>
+</x-filament::modal.heading>

@@ -1,25 +1,34 @@
+@php
+    $id = $getId();
+    $isContained = $getContainer()->getParentComponent()->isContained();
+
+    $activeTabClasses = \Illuminate\Support\Arr::toCssClasses([
+        'fi-active',
+        'p-6' => $isContained,
+        'mt-6' => ! $isContained,
+    ]);
+
+    $inactiveTabClasses = 'invisible absolute h-0 overflow-hidden p-0';
+@endphp
+
 <div
-    aria-labelledby="{{ $getId() }}"
-    id="{{ $getId() }}"
-    role="tabpanel"
-    tabindex="0"
-    x-bind:class="{ 'invisible h-0 p-0 overflow-y-hidden': tab !== '{{ $getId() }}', 'p-6': tab === '{{ $getId() }}' }"
-    x-on:expand-concealing-component.window="
-        error = $el.querySelector('[data-validation-error]')
-
-        if (! error) {
-            return
-        }
-
-        tab = @js($getId())
-
-        if (document.body.querySelector('[data-validation-error]') !== error) {
-            return
-        }
-
-        setTimeout(() => $el.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'start' }), 200)
-    "
-    {{ $attributes->merge($getExtraAttributes())->class(['filament-forms-tabs-component-tab focus:outline-none']) }}
+    x-bind:class="{
+        @js($activeTabClasses): tab === @js($id),
+        @js($inactiveTabClasses): tab !== @js($id),
+    }"
+    x-on:expand="tab = @js($id)"
+    {{
+        $attributes
+            ->merge([
+                'aria-labelledby' => $id,
+                'id' => $id,
+                'role' => 'tabpanel',
+                'tabindex' => '0',
+                'wire:key' => "{$this->getId()}.{$getStatePath()}." . \Filament\Forms\Components\Tabs\Tab::class . ".tabs.{$id}",
+            ], escape: false)
+            ->merge($getExtraAttributes(), escape: false)
+            ->class(['fi-fo-tabs-tab outline-none'])
+    }}
 >
     {{ $getChildComponentContainer() }}
 </div>

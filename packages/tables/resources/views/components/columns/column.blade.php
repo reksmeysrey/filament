@@ -5,55 +5,64 @@
     'recordAction' => null,
     'recordKey' => null,
     'recordUrl' => null,
+    'shouldOpenRecordUrlInNewTab' => false,
 ])
 
 @php
+    use Filament\Support\Enums\Alignment;
+
     $action = $column->getAction();
-    $alignment = $column->getAlignment();
+    $alignment = $column->getAlignment() ?? Alignment::Start;
     $name = $column->getName();
     $shouldOpenUrlInNewTab = $column->shouldOpenUrlInNewTab();
     $tooltip = $column->getTooltip();
     $url = $column->getUrl();
 
+    if (! $alignment instanceof Alignment) {
+        $alignment = filled($alignment) ? (Alignment::tryFrom($alignment) ?? $alignment) : null;
+    }
+
+    $columnClasses = \Illuminate\Support\Arr::toCssClasses([
+        'flex w-full disabled:pointer-events-none',
+        match ($alignment) {
+            Alignment::Start => 'justify-start text-start',
+            Alignment::Center => 'justify-center text-center',
+            Alignment::End => 'justify-end text-end',
+            Alignment::Left => 'justify-start text-left',
+            Alignment::Right => 'justify-end text-right',
+            Alignment::Justify, Alignment::Between => 'justify-between text-justify',
+            default => $alignment,
+        },
+    ]);
+
     $slot = $column->viewData(['recordKey' => $recordKey]);
 @endphp
 
 <div
-    {{ $attributes->class([
-        'filament-tables-column-wrapper',
-        match ($alignment) {
-            'start' => 'text-start',
-            'center' => 'text-center',
-            'end' => 'text-end',
-            'left' => 'text-left',
-            'right' => 'text-right',
-            'justify' => 'text-justify',
-            default => null,
-        },
-    ]) }}
-    @if ($tooltip)
+    @if (filled($tooltip))
         x-data="{}"
-        x-tooltip.raw="{{ $tooltip }}"
+        x-tooltip="{
+            content: @js($tooltip),
+            theme: $store.theme,
+        }"
     @endif
+    {{ $attributes->class(['fi-ta-col-wrp']) }}
 >
-    @if ($isClickDisabled)
-        {{ $slot }}
-    @elseif ($url || ($recordUrl && $action === null))
+    @if (($url || ($recordUrl && $action === null)) && (! $isClickDisabled))
         <a
-            href="{{ $url ?: $recordUrl }}"
-            {!! $shouldOpenUrlInNewTab ? 'target="_blank"' : null !!}
-            class="block"
+            {{ \Filament\Support\generate_href_html($url ?: $recordUrl, $url ? $shouldOpenUrlInNewTab : $shouldOpenRecordUrlInNewTab) }}
+            class="{{ $columnClasses }}"
         >
             {{ $slot }}
         </a>
-    @elseif ($action || $recordAction)
+    @elseif (($action || $recordAction) && (! $isClickDisabled))
         @php
             if ($action instanceof \Filament\Tables\Actions\Action) {
                 $wireClickAction = "mountTableAction('{$action->getName()}', '{$recordKey}')";
             } elseif ($action) {
                 $wireClickAction = "callTableColumnAction('{$name}', '{$recordKey}')";
             } else {
-                if ($this->getCachedTableAction($recordAction)) {
+                if ($this->getTable()->getAction($recordAction)) {
                     $wireClickAction = "mountTableAction('{$recordAction}', '{$recordKey}')";
                 } else {
                     $wireClickAction = "{$recordAction}('{$recordKey}')";
@@ -62,16 +71,17 @@
         @endphp
 
         <button
-            wire:click="{{ $wireClickAction }}"
-            wire:target="{{ $wireClickAction }}"
-            wire:loading.attr="disabled"
-            wire:loading.class="cursor-wait opacity-70"
             type="button"
-            class="block w-full text-start"
+            wire:click.stop.prevent="{{ $wireClickAction }}"
+            wire:loading.attr="disabled"
+            wire:target="{{ $wireClickAction }}"
+            class="{{ $columnClasses }}"
         >
             {{ $slot }}
         </button>
     @else
-        {{ $slot }}
+        <div class="{{ $columnClasses }}">
+            {{ $slot }}
+        </div>
     @endif
 </div>
