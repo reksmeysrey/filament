@@ -1,0 +1,7 @@
+*.md
+**/dist
+**/vendor
+composer.lock
+docs-assets
+packages/panels/resources/boost
+tests/src/Upgrade/Fixture

@@ -2,69 +2,223 @@
 
 return [
 
+    'column_toggle' => [
+
+        'heading' => 'სვეტები',
+
+    ],
+
+    'columns' => [
+
+        'text' => [
+
+            'actions' => [
+                'collapse_list' => 'აჩვენე :count ნაკლები',
+                'expand_list' => 'აჩვენე :count მეტი',
+            ],
+
+            'more_list_items' => 'და კიდევ :count',
+
+        ],
+
+    ],
+
     'fields' => [
 
-        'search_query' => [
-            'label' => 'ძიება',
-            'placeholder' => 'ძიება',
+        'bulk_select_page' => [
+            'label' => 'მონიშნეთ/გააუქმეთ ყველა ელემენტი საერთო ქმედებებისთვის.',
+        ],
+
+        'bulk_select_record' => [
+            'label' => 'მონიშნეთ/გააუქმეთ ელემენტი :key საერთო ქმედებებისთვის.',
+        ],
+
+        'bulk_select_group' => [
+            'label' => 'მონიშნეთ/გააუქმეთ ჯგუფი :title საერთო ქმედებებისთვის.',
+        ],
+
+        'search' => [
+            'label' => 'ძებნა',
+            'placeholder' => 'ძებნა',
+            'indicator' => 'ძებნა',
         ],
 
     ],
 
-    'pagination' => [
+    'summary' => [
 
-        'label' => 'გვერდების ნავიგაცია',
+        'heading' => 'შეჯამება',
 
-        'overview' => 'Showing :first to :last of :total results',
-
-        'fields' => [
-
-            'records_per_page' => [
-                'label' => 'ჩანაწერი თითო გვერდზე',
-            ],
-
+        'subheadings' => [
+            'all' => 'ყველა :label',
+            'group' => ':group შეჯამება',
+            'page' => 'ეს გვერდი',
         ],
 
-        'buttons' => [
+        'summarizers' => [
 
-            'go_to_page' => [
-                'label' => ':page-ე გვერდზე გადასვლა',
+            'average' => [
+                'label' => 'საშუალო',
             ],
 
-            'next' => [
-                'label' => 'შემდეგი',
+            'count' => [
+                'label' => 'რაოდენობა',
             ],
 
-            'previous' => [
-                'label' => 'წინა',
+            'sum' => [
+                'label' => 'ჯამი',
             ],
 
         ],
 
     ],
 
-    'buttons' => [
+    'actions' => [
+
+        'disable_reordering' => [
+            'label' => 'ჩანაწერების გადალაგების დასრულება',
+        ],
+
+        'enable_reordering' => [
+            'label' => 'ჩანაწერების გადალაგება',
+        ],
 
         'filter' => [
             'label' => 'ფილტრი',
         ],
 
-        'open_actions' => [
-            'label' => 'Open actions',
+        'group' => [
+            'label' => 'ჯგუფი',
+        ],
+
+        'open_bulk_actions' => [
+            'label' => 'საერთო ქმედებები',
+        ],
+
+        'toggle_columns' => [
+            'label' => 'სვეტების გადართვა',
         ],
 
     ],
 
     'empty' => [
-        'heading' => 'ჩანაწერები არ არსებობს.',
+
+        'heading' => 'არაა :model',
+
+        'description' => 'შექმენით :model რომ დაიწყოთ.',
+
     ],
+
+    'filters' => [
+
+        'actions' => [
+
+            'apply' => [
+                'label' => 'ფილტრების გამოყენება',
+            ],
+
+            'remove' => [
+                'label' => 'ფილტრის მოხსნა',
+            ],
+
+            'remove_all' => [
+                'label' => 'ყველა ფილტრის მოხსნა',
+                'tooltip' => 'ყველა ფილტრის მოხსნა',
+            ],
+
+            'reset' => [
+                'label' => 'გასუფთავება',
+            ],
+
+        ],
+
+        'heading' => 'ფილტრები',
+
+        'indicator' => 'აქტიური ფილტრები',
+
+        'multi_select' => [
+            'placeholder' => 'ყველა',
+        ],
+
+        'select' => [
+            'placeholder' => 'ყველა',
+        ],
+
+        'trashed' => [
+
+            'label' => 'წაშლილი ჩანაწერები',
+
+            'only_trashed' => 'მხოლოდ წაშლილი ჩანაწერები',
+
+            'with_trashed' => 'წაშლილ ჩანაწერებთან ერთად',
+
+            'without_trashed' => 'წაშლილი ჩანაწერების გარეშე',
+
+        ],
+
+    ],
+
+    'grouping' => [
+
+        'fields' => [
+
+            'group' => [
+                'label' => 'დაჯგუფებულია',
+                'placeholder' => 'დაჯგუფებულია',
+            ],
+
+            'direction' => [
+
+                'label' => 'ჯგუფის მიმართულება',
+
+                'options' => [
+                    'asc' => 'ზრდადი',
+                    'desc' => 'კლებადი',
+                ],
+
+            ],
+
+        ],
+
+    ],
+
+    'reorder_indicator' => 'ჩანაწერების გადათრევა და ჩამოშვება რიგში.',
 
     'selection_indicator' => [
 
-        'buttons' => [
+        'selected_count' => '1 ჩანაწერი მონიშნულია|:count ჩანაწერები მონიშნულია',
+
+        'actions' => [
 
             'select_all' => [
-                'label' => 'Select all :count',
+                'label' => 'მონიშნეთ ყველა :count',
+            ],
+
+            'deselect_all' => [
+                'label' => 'ყველას მონიშვნის გაუქმება',
+            ],
+
+        ],
+
+    ],
+
+    'sorting' => [
+
+        'fields' => [
+
+            'column' => [
+                'label' => 'სორტირება',
+            ],
+
+            'direction' => [
+
+                'label' => 'სორტირება',
+
+                'options' => [
+                    'asc' => 'ზრდადობით',
+                    'desc' => 'კლებადობით',
+                ],
+
             ],
 
         ],

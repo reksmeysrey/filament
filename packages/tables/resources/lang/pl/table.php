@@ -2,66 +2,82 @@
 
 return [
 
+    'column_toggle' => [
+
+        'heading' => 'Kolumny',
+
+    ],
+
     'columns' => [
 
-        'tags' => [
-            'more' => 'i :count więcej',
+        'actions' => [
+            'label' => 'Akcja|Akcje',
         ],
 
-        'messages' => [
-            'copied' => 'Skopiowano',
+        'text' => [
+
+            'actions' => [
+                'collapse_list' => 'Pokaż :count mniej',
+                'expand_list' => 'Pokaż :count więcej',
+            ],
+
+            'more_list_items' => 'i :count więcej',
+
         ],
 
     ],
 
     'fields' => [
 
-        'search_query' => [
+        'bulk_select_page' => [
+            'label' => 'Zaznacz/odznacz wszystkie pozycje dla operacji zbiorczych.',
+        ],
+
+        'bulk_select_record' => [
+            'label' => 'Zaznacz/odznacz pozycję :key dla operacji zbiorczych.',
+        ],
+
+        'bulk_select_group' => [
+            'label' => 'Zaznacz/odznacz grupę :title dla operacji zbiorczych.',
+        ],
+
+        'search' => [
             'label' => 'Szukaj',
             'placeholder' => 'Szukaj',
+            'indicator' => 'Szukaj',
         ],
 
     ],
 
-    'pagination' => [
+    'summary' => [
 
-        'label' => 'Paginacja',
+        'heading' => 'Podsumowanie',
 
-        'overview' => 'Pozycje od :first do :last z :total łącznie',
-
-        'fields' => [
-
-            'records_per_page' => [
-
-                'label' => 'na stronę',
-
-                'options' => [
-                    'all' => 'Wszystkie',
-                ],
-
-            ],
-
+        'subheadings' => [
+            'all' => 'Wszystkie :label',
+            'group' => 'Grupa :group',
+            'page' => 'Bieżąca strona',
         ],
 
-        'buttons' => [
+        'summarizers' => [
 
-            'go_to_page' => [
-                'label' => 'Przejdź do strony :page',
+            'average' => [
+                'label' => 'Średnia',
             ],
 
-            'next' => [
-                'label' => 'Następna',
+            'count' => [
+                'label' => 'Ilość',
             ],
 
-            'previous' => [
-                'label' => 'Poprzednia',
+            'sum' => [
+                'label' => 'Suma',
             ],
 
         ],
 
     ],
 
-    'buttons' => [
+    'actions' => [
 
         'disable_reordering' => [
             'label' => 'Zakończ zmienianie kolejności',
@@ -75,8 +91,12 @@ return [
             'label' => 'Filtr',
         ],
 
-        'open_actions' => [
-            'label' => 'Otwórz akcje',
+        'group' => [
+            'label' => 'Grupa',
+        ],
+
+        'open_bulk_actions' => [
+            'label' => 'Akcje masowe',
         ],
 
         'toggle_columns' => [
@@ -86,12 +106,20 @@ return [
     ],
 
     'empty' => [
-        'heading' => 'Nie znaleziono wyników',
+
+        'heading' => 'Nie znaleziono rekordów',
+
+        'description' => 'Utwórz rekord aby rozpocząć.',
+
     ],
 
     'filters' => [
 
-        'buttons' => [
+        'actions' => [
+
+            'apply' => [
+                'label' => 'Zastosuj filtry',
+            ],
 
             'remove' => [
                 'label' => 'Usuń filtr',
@@ -107,6 +135,8 @@ return [
             ],
 
         ],
+
+        'heading' => 'Filtry',
 
         'indicator' => 'Aktywne filtry',
 
@@ -132,13 +162,37 @@ return [
 
     ],
 
+    'grouping' => [
+
+        'fields' => [
+
+            'group' => [
+                'label' => 'Grupuj według',
+                'placeholder' => 'Grupuj według',
+            ],
+
+            'direction' => [
+
+                'label' => 'Kolejność grup',
+
+                'options' => [
+                    'asc' => 'Rosnąco',
+                    'desc' => 'Malejąco',
+                ],
+
+            ],
+
+        ],
+
+    ],
+
     'reorder_indicator' => 'Zmień kolejność przeciągając.',
 
     'selection_indicator' => [
 
-        'selected_count' => '{1} 1 rekord zaznaczony.|[2,4]:count rekordy zaznaczone.|[5,*]:count rekordów zaznaczonych.',
+        'selected_count' => '{1} 1 rekord zaznaczony|[2,4]:count rekordy zaznaczone|[5,*]:count rekordów zaznaczonych',
 
-        'buttons' => [
+        'actions' => [
 
             'select_all' => [
                 'label' => 'Zaznacz wszystkie :count',

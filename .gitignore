@@ -1,10 +1,13 @@
 /.idea
+/.phpunit.cache
 /build
 /coverage
 /node_modules
 /node_modules.nosync
 /vendor
 /vendor.nosync
+/.pint.cache
+/.prettiercache
 /.vscode
 .DS_Store
 .phpunit.result.cache

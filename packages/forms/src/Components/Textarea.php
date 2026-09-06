@@ -3,18 +3,23 @@
 namespace Filament\Forms\Components;
 
 use Closure;
+use Filament\Forms\Components\Concerns\CanDisableGrammarly;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
 
 class Textarea extends Field implements Contracts\CanBeLengthConstrained
 {
-    use Concerns\CanBeAutocapitalized;
+    use CanDisableGrammarly;
     use Concerns\CanBeAutocompleted;
     use Concerns\CanBeLengthConstrained;
+    use Concerns\CanBeReadOnly;
     use Concerns\HasExtraInputAttributes;
     use Concerns\HasPlaceholder;
     use HasExtraAlpineAttributes;
 
-    protected string $view = 'forms::components.textarea';
+    /**
+     * @var view-string
+     */
+    protected string $view = 'filament-forms::components.textarea';
 
     protected int | Closure | null $cols = null;
 
@@ -55,6 +60,6 @@ class Textarea extends Field implements Contracts\CanBeLengthConstrained
 
     public function shouldAutosize(): bool
     {
-        return $this->rows === null || ((bool) $this->evaluate($this->shouldAutosize));
+        return (bool) $this->evaluate($this->shouldAutosize);
     }
 }

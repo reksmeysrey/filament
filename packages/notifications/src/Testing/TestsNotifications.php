@@ -4,34 +4,29 @@ namespace Filament\Notifications\Testing;
 
 use Closure;
 use Filament\Notifications\Notification;
-use Illuminate\Support\Arr;
 use Livewire\Component;
-use Livewire\Testing\TestableLivewire;
-use PHPUnit\Framework\Assert;
+use Livewire\Features\SupportTesting\Testable;
 
 /**
  * @method Component instance()
  *
- * @mixin TestableLivewire
+ * @mixin Testable
  */
 class TestsNotifications
 {
     public function assertNotified(): Closure
     {
-        return function (Notification | string $notification = null): static {
-            $notifications = session()->get('filament.notifications');
+        return function (Notification | string | null $notification = null): static {
+            Notification::assertNotified($notification);
 
-            Assert::assertIsArray($notifications);
+            return $this;
+        };
+    }
 
-            $expectedNotification = Arr::last($notifications);
-
-            Assert::assertIsArray($expectedNotification);
-
-            if ($notification instanceof Notification) {
-                Assert::assertSame($expectedNotification, $notification->toArray());
-            } elseif (filled($notification)) {
-                Assert::assertSame($expectedNotification['title'], $notification);
-            }
+    public function assertNotNotified(): Closure
+    {
+        return function (Notification | string | null $notification = null): static {
+            Notification::assertNotNotified($notification);
 
             return $this;
         };

@@ -14,7 +14,12 @@ class Livewire extends Component implements HasForms
 
     public static function make(): static
     {
-        return new static();
+        return new static;
+    }
+
+    public function mount(): void
+    {
+        $this->form->fill();
     }
 
     public function data($data): static

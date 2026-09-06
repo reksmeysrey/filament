@@ -32,22 +32,13 @@ class Notification {
     }
 
     status(status) {
-        switch (status) {
-            case 'success':
-                this.success()
+        this.status = status
 
-                break
+        return this
+    }
 
-            case 'warning':
-                this.warning()
-
-                break
-
-            case 'danger':
-                this.danger()
-
-                break
-        }
+    color(color) {
+        this.color = color
 
         return this
     }
@@ -82,29 +73,50 @@ class Notification {
         return this
     }
 
+    danger() {
+        this.status('danger')
+
+        return this
+    }
+
+    info() {
+        this.status('info')
+
+        return this
+    }
+
     success() {
-        this.icon('heroicon-o-check-circle')
-        this.iconColor('success')
+        this.status('success')
 
         return this
     }
 
     warning() {
-        this.icon('heroicon-o-exclamation-circle')
-        this.iconColor('warning')
+        this.status('warning')
 
         return this
     }
 
-    danger() {
-        this.icon('heroicon-o-x-circle')
-        this.iconColor('danger')
+    view(view) {
+        this.view = view
+
+        return this
+    }
+
+    viewData(viewData) {
+        this.viewData = viewData
 
         return this
     }
 
     send() {
-        Livewire.emit('notificationSent', this)
+        window.dispatchEvent(
+            new CustomEvent('notificationSent', {
+                detail: {
+                    notification: this,
+                },
+            }),
+        )
 
         return this
     }
@@ -129,9 +141,63 @@ class Action {
         return this
     }
 
-    emit(event, data) {
+    dispatch(event, data) {
         this.event(event)
         this.eventData(data)
+
+        return this
+    }
+
+    dispatchSelf(event, data) {
+        this.dispatch(event, data)
+        this.dispatchDirection = 'self'
+
+        return this
+    }
+
+    dispatchTo(component, event, data) {
+        this.dispatch(event, data)
+        this.dispatchDirection = 'to'
+        this.dispatchToComponent = component
+
+        return this
+    }
+
+    /**
+     * @deprecated Use `dispatch()` instead.
+     */
+    emit(event, data) {
+        this.dispatch(event, data)
+
+        return this
+    }
+
+    /**
+     * @deprecated Use `dispatchSelf()` instead.
+     */
+    emitSelf(event, data) {
+        this.dispatchSelf(event, data)
+
+        return this
+    }
+
+    /**
+     * @deprecated Use `dispatchTo()` instead.
+     */
+    emitTo(component, event, data) {
+        this.dispatchTo(component, event, data)
+
+        return this
+    }
+
+    dispatchDirection(dispatchDirection) {
+        this.dispatchDirection = dispatchDirection
+
+        return this
+    }
+
+    dispatchToComponent(component) {
+        this.dispatchToComponent = component
 
         return this
     }
@@ -185,7 +251,7 @@ class Action {
     }
 
     close(condition = true) {
-        this.shouldCloseNotification = condition
+        this.shouldClose = condition
 
         return this
     }
@@ -215,19 +281,19 @@ class Action {
     }
 
     button() {
-        this.view('notifications::actions.button-action')
+        this.view('filament-actions::button-action')
 
         return this
     }
 
     grouped() {
-        this.view('notifications::actions.grouped-action')
+        this.view('filament-actions::grouped-action')
 
         return this
     }
 
     link() {
-        this.view('notifications::actions.link-action')
+        this.view('filament-actions::link-action')
 
         return this
     }

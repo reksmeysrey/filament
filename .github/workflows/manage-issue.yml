@@ -4,14 +4,19 @@ on:
   issues:
     types: [opened, edited]
 
+permissions:
+  contents: read
+
 jobs:
   check-repro:
     runs-on: ubuntu-latest
+    permissions:
+      issues: write
     steps:
-      - uses: actions/github-script@v3
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
-            const URL_REGEXP = /### Reproduction repository[\r\n]+([^#]+)###/m
+            const URL_REGEXP = /### Reproduction repository \(issue will be closed if this is not valid\)[\r\n]+([^#]+)###/m
             const REPRO_STEPS_REGEXP = /### Steps to reproduce[\r\n]+([^#]+)###/m
             const LABEL_NEEDS_MORE_INFORMATION = 'needs more info'
             const LABEL_UNCONFIRMED = 'unconfirmed'
@@ -29,6 +34,13 @@ jobs:
             const user = context.payload.sender.login
             const issue = context.payload.issue
             const body = issue.body
+
+            if (body.includes('filament/minimal-theme')) {
+                debug('Ignoring Minimal Theme issue.')
+
+                return
+            }
+
             const urlMatch = body.match(URL_REGEXP)
             const reproStepsMatch = body.match(REPRO_STEPS_REGEXP)
             const url = urlMatch !== null ? urlMatch[1].trim() : null
@@ -44,7 +56,7 @@ jobs:
                     .join('\n')
                     .trim()
 
-                await github.issues.createComment({
+                await github.rest.issues.createComment({
                     issue_number: context.issue.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -55,7 +67,7 @@ jobs:
             async function getGitHubActionComments() {
                 debug(`Loading existing comments...`)
 
-                const comments = await github.issues.listComments({
+                const comments = await github.rest.issues.listComments({
                     issue_number: context.issue.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -68,7 +80,7 @@ jobs:
             }
 
             async function getIssueLabels() {
-                const issues = await github.issues.listLabelsOnIssue({
+                const issues = await github.rest.issues.listLabelsOnIssue({
                     issue_number: context.issue.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -78,7 +90,7 @@ jobs:
             }
 
             async function updateIssue(state, state_reason = null) {
-                await github.issues.update({
+                await github.rest.issues.update({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
                     issue_number: context.issue.number,
@@ -104,7 +116,7 @@ jobs:
 
                 debug(`Missing required information`)
 
-                await github.issues.addLabels({
+                await github.rest.issues.addLabels({
                     issue_number: context.issue.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -142,7 +154,7 @@ jobs:
 
                 debug(`Reopening closed issue`)
 
-                await github.issues.removeLabel({
+                await github.rest.issues.removeLabel({
                     issue_number: context.issue.number,
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -158,7 +170,7 @@ jobs:
                 Hey @${user}! We're sorry to hear that you've hit this issue. 💛
             `.trim()
 
-            const NO_REPRO_URL = (! url.includes('https://github.com/')) || url.includes('https://github.com/filamentphp/') || url === 'https://github.com/filamentphp'
+            const NO_REPRO_URL = ((! url) || (! url.includes('https://github.com/')) || (url.includes('https://github.com/filamentphp') && (! url.includes('https://github.com/filamentphp/demo'))))
             const NO_REPRO_STEPS = reproSteps.length < 25
 
             if (NO_REPRO_URL || NO_REPRO_STEPS) {

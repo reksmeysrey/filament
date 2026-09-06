@@ -2,7 +2,8 @@
 
 namespace Filament\Tables\Actions;
 
-use Filament\Support\Actions\Concerns\CanCustomizeProcess;
+use Filament\Actions\Concerns\CanCustomizeProcess;
+use Filament\Support\Facades\FilamentIcon;
 use Illuminate\Database\Eloquent\Model;
 
 class DeleteAction extends Action
@@ -18,19 +19,21 @@ class DeleteAction extends Action
     {
         parent::setUp();
 
-        $this->label(__('filament-support::actions/delete.single.label'));
-
-        $this->modalHeading(fn (): string => __('filament-support::actions/delete.single.modal.heading', ['label' => $this->getRecordTitle()]));
-
-        $this->modalButton(__('filament-support::actions/delete.single.modal.actions.delete.label'));
-
-        $this->successNotificationTitle(__('filament-support::actions/delete.single.messages.deleted'));
-
-        $this->color('danger');
-
-        $this->icon('heroicon-s-trash');
-
         $this->requiresConfirmation();
+
+        $this->label(__('filament-actions::delete.single.label'));
+
+        $this->modalHeading(fn (): string => __('filament-actions::delete.single.modal.heading', ['label' => $this->getRecordTitle()]));
+
+        $this->modalSubmitActionLabel(__('filament-actions::delete.single.modal.actions.delete.label'));
+
+        $this->successNotificationTitle(__('filament-actions::delete.single.notifications.deleted.title'));
+
+        $this->defaultColor('danger');
+
+        $this->icon(FilamentIcon::resolve('actions::delete-action') ?? 'heroicon-m-trash');
+
+        $this->modalIcon(FilamentIcon::resolve('actions::delete-action.modal') ?? 'heroicon-o-trash');
 
         $this->hidden(static function (Model $record): bool {
             if (! method_exists($record, 'trashed')) {

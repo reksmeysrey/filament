@@ -3,31 +3,50 @@
 namespace Filament\Forms\Components;
 
 use Closure;
+use Filament\Support\Concerns\HasDescription;
 use Filament\Support\Concerns\HasExtraAlpineAttributes;
+use Filament\Support\Concerns\HasHeading;
+use Filament\Support\Concerns\HasIcon;
+use Filament\Support\Concerns\HasIconColor;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Str;
 
-class Section extends Component implements Contracts\CanConcealComponents, Contracts\CanEntangleWithSingularRelationships
+class Section extends Component implements Contracts\CanConcealComponents, Contracts\CanEntangleWithSingularRelationships, Contracts\HasFooterActions, Contracts\HasHeaderActions
 {
     use Concerns\CanBeCollapsed;
     use Concerns\CanBeCompacted;
     use Concerns\EntanglesStateWithSingularRelationship;
+    use Concerns\HasFooterActions;
+    use Concerns\HasHeaderActions;
+    use HasDescription;
     use HasExtraAlpineAttributes;
+    use HasHeading;
+    use HasIcon;
+    use HasIconColor;
 
-    protected string $view = 'forms::components.section';
-
-    protected string | Htmlable | Closure | null $description = null;
-
-    protected string | Closure $heading;
+    /**
+     * @var view-string
+     */
+    protected string $view = 'filament-forms::components.section';
 
     protected bool | Closure | null $isAside = null;
 
-    final public function __construct(string | Closure $heading)
+    protected bool | Closure $isFormBefore = false;
+
+    /**
+     * @param  string | array<Component> | Htmlable | Closure | null  $heading
+     */
+    final public function __construct(string | array | Htmlable | Closure | null $heading = null)
     {
-        $this->heading($heading);
+        is_array($heading)
+            ? $this->childComponents($heading)
+            : $this->heading($heading);
     }
 
-    public static function make(string | Closure $heading): static
+    /**
+     * @param  string | array<Component> | Htmlable | Closure | null  $heading
+     */
+    public static function make(string | array | Htmlable | Closure | null $heading = null): static
     {
         $static = app(static::class, ['heading' => $heading]);
         $static->configure();
@@ -42,20 +61,6 @@ class Section extends Component implements Contracts\CanConcealComponents, Contr
         $this->columnSpan('full');
     }
 
-    public function description(string | Htmlable | Closure | null $description = null): static
-    {
-        $this->description = $description;
-
-        return $this;
-    }
-
-    public function heading(string | Closure $heading): static
-    {
-        $this->heading = $heading;
-
-        return $this;
-    }
-
     public function aside(bool | Closure | null $condition = true): static
     {
         $this->isAside = $condition;
@@ -63,29 +68,32 @@ class Section extends Component implements Contracts\CanConcealComponents, Contr
         return $this;
     }
 
-    public function getDescription(): string | Htmlable | null
-    {
-        return $this->evaluate($this->description);
-    }
-
-    public function getHeading(): string
-    {
-        return $this->evaluate($this->heading);
-    }
-
     public function getId(): ?string
     {
         $id = parent::getId();
 
-        if (! $id) {
-            $id = Str::slug($this->getHeading());
+        if (filled($id)) {
+            return $id;
+        }
 
-            if ($statePath = $this->getStatePath()) {
-                $id = "{$statePath}.{$id}";
-            }
+        $heading = $this->getHeading();
+
+        if (blank($heading)) {
+            return null;
+        }
+
+        $id = Str::slug($heading);
+
+        if ($statePath = $this->getStatePath()) {
+            $id = "{$statePath}.{$id}";
         }
 
         return $id;
+    }
+
+    public function getKey(): ?string
+    {
+        return parent::getKey() ?? ($this->getActions() ? $this->getId() : null);
     }
 
     public function canConcealComponents(): bool
@@ -96,5 +104,17 @@ class Section extends Component implements Contracts\CanConcealComponents, Contr
     public function isAside(): bool
     {
         return (bool) ($this->evaluate($this->isAside) ?? false);
+    }
+
+    public function formBefore(bool | Closure $condition = true): static
+    {
+        $this->isFormBefore = $condition;
+
+        return $this;
+    }
+
+    public function isFormBefore(): bool
+    {
+        return (bool) $this->evaluate($this->isFormBefore);
     }
 }

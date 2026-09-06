@@ -3,14 +3,22 @@
 namespace Filament\Forms\Concerns;
 
 use Filament\Forms\Components;
+use Filament\Forms\Components\Component;
 
 trait CanBeValidated
 {
+    /**
+     * @return array<string, string>
+     */
     public function getValidationAttributes(): array
     {
         $attributes = [];
 
-        foreach ($this->getComponents() as $component) {
+        foreach ($this->getComponents(withHidden: true) as $component) {
+            if ($component->isHiddenAndNotDehydrated()) {
+                continue;
+            }
+
             if ($component instanceof Components\Contracts\HasValidationRules) {
                 $component->dehydrateValidationAttributes($attributes);
             }
@@ -20,18 +28,59 @@ trait CanBeValidated
                     continue;
                 }
 
-                $attributes = array_merge($attributes, $container->getValidationAttributes());
+                $attributes = [
+                    ...$attributes,
+                    ...$container->getValidationAttributes(),
+                ];
             }
         }
 
         return $attributes;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function getValidationMessages(): array
+    {
+        $messages = [];
+
+        foreach ($this->getComponents(withHidden: true) as $component) {
+            if ($component->isHiddenAndNotDehydrated()) {
+                continue;
+            }
+
+            if ($component instanceof Components\Contracts\HasValidationRules) {
+                $component->dehydrateValidationMessages($messages);
+            }
+
+            foreach ($component->getChildComponentContainers() as $container) {
+                if ($container->isHidden()) {
+                    continue;
+                }
+
+                $messages = [
+                    ...$messages,
+                    ...$container->getValidationMessages(),
+                ];
+            }
+        }
+
+        return $messages;
+    }
+
+    /**
+     * @return array<string, array<mixed>>
+     */
     public function getValidationRules(): array
     {
         $rules = [];
 
-        foreach ($this->getComponents() as $component) {
+        foreach ($this->getComponents(withHidden: true) as $component) {
+            if ($component->isHiddenAndNotDehydrated()) {
+                continue;
+            }
+
             if ($component instanceof Components\Contracts\HasValidationRules) {
                 $component->dehydrateValidationRules($rules);
             }
@@ -41,16 +90,25 @@ trait CanBeValidated
                     continue;
                 }
 
-                $rules = array_merge($rules, $container->getValidationRules());
+                $rules = [
+                    ...$rules,
+                    ...$container->getValidationRules(),
+                ];
             }
         }
 
         return $rules;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function validate(): array
     {
-        if (! count($this->getComponents())) {
+        if (! count(array_filter(
+            $this->getComponents(withHidden: true),
+            fn (Component $component): bool => ! $component->isHiddenAndNotDehydrated(),
+        ))) {
             return [];
         }
 
@@ -60,6 +118,18 @@ trait CanBeValidated
             return [];
         }
 
-        return $this->getLivewire()->validate($rules, [], $this->getValidationAttributes());
+        $livewire = $this->getLivewire();
+
+        // By storing the currently validating form in the Livewire component, we can optimize the validation process
+        // so that the `prepareForValidation()` method is only called for the current form instead of all forms.
+        // This can also prevent infinite loops involving schemas that self-validate, such as the table query
+        // builder which crashes when it is being used while an action is submitted.
+        $livewire->currentlyValidatingForm($this);
+
+        try {
+            return $livewire->validate($rules, $this->getValidationMessages(), $this->getValidationAttributes());
+        } finally {
+            $livewire->currentlyValidatingForm(null);
+        }
     }
 }

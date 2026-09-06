@@ -3,7 +3,8 @@
 use Filament\Tests\Models\Post;
 use Filament\Tests\Tables\Fixtures\PostsTable;
 use Filament\Tests\Tables\TestCase;
-use function Pest\Livewire\livewire;
+
+use function Filament\Tests\livewire;
 
 uses(TestCase::class);
 

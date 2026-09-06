@@ -4,9 +4,9 @@ return [
 
     'modal' => [
 
-        'heading' => 'یپام‌ها',
+        'heading' => 'پیام‌ها',
 
-        'buttons' => [
+        'actions' => [
 
             'clear' => [
                 'label' => 'پاک کردن',
